@@ -1,0 +1,63 @@
+/* =========================================================
+   PAGOCHECK — APP
+   Estructura principal de la aplicación
+   ========================================================= */
+
+main {
+  width: min(1100px, calc(100% - 40px));
+
+  margin: 0 auto;
+
+  padding: 48px 0 80px;
+
+  text-align: center;
+}
+
+/* =========================================================
+   TÍTULO PRINCIPAL
+   ========================================================= */
+
+main > h1 {
+  margin: 0 0 10px;
+
+  color: var(--text);
+
+  font-size: 34px;
+  font-weight: 800;
+
+  letter-spacing: -0.8px;
+}
+
+/* =========================================================
+   DESCRIPCIÓN PRINCIPAL
+   ========================================================= */
+
+main > p {
+  margin: 0 0 40px;
+
+  color: var(--text-secondary);
+
+  font-size: 15px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  main {
+    width: calc(100% - 28px);
+
+    padding: 40px 0 60px;
+  }
+
+  main > h1 {
+    font-size: 28px;
+  }
+
+  main > p {
+    margin-bottom: 30px;
+
+    font-size: 14px;
+  }
+}

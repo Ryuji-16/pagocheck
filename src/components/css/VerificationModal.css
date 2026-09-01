@@ -1,0 +1,441 @@
+/* =========================================================
+   RESULTADO — MODAL
+   ========================================================= */
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(0, 0, 0, 0.48);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.result-modal {
+  position: relative;
+
+  width: min(460px, 100%);
+
+  padding: 36px;
+
+  text-align: center;
+
+  background: rgba(11, 41, 45, 0.94);
+
+  border: 1px solid rgba(119, 176, 170, 0.28);
+
+  border-radius: 24px;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.42);
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  animation: resultModalIn 0.25s ease-out;
+}
+
+
+/* =========================================================
+   CERRAR
+   ========================================================= */
+
+.result-close {
+  position: absolute;
+
+  top: 14px;
+  right: 16px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: var(--text-secondary);
+
+  font-size: 25px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.result-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+
+  color: var(--text);
+}
+
+
+/* =========================================================
+   ICONO DE ÉXITO
+   ========================================================= */
+
+.result-icon {
+  width: 72px;
+  height: 72px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(46, 139, 112, 0.18);
+
+  border: 1px solid rgba(46, 139, 112, 0.35);
+
+  color: #75d5b2;
+
+  font-size: 34px;
+  font-weight: 700;
+
+  box-shadow:
+    0 8px 24px rgba(46, 139, 112, 0.12);
+}
+
+
+/* =========================================================
+   TÍTULO
+   ========================================================= */
+
+.result-modal h2 {
+  margin: 0 0 8px;
+
+  color: var(--text);
+
+  font-size: 25px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   MENSAJE
+   ========================================================= */
+
+.result-message {
+  margin: 0 0 26px;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   DETALLES
+   ========================================================= */
+
+.result-details {
+  display: flex;
+  flex-direction: column;
+
+  margin-bottom: 26px;
+
+  border: 1px solid rgba(119, 176, 170, 0.16);
+
+  border-radius: 16px;
+
+  overflow: hidden;
+}
+
+
+.result-detail {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 13px 16px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  border-bottom: 1px solid rgba(119, 176, 170, 0.10);
+
+  text-align: left;
+}
+
+
+.result-detail:last-child {
+  border-bottom: none;
+}
+
+
+.result-detail span {
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+
+.result-detail strong {
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: right;
+}
+
+
+.result-detail .result-status {
+  color: #75d5b2;
+}
+
+
+/* =========================================================
+   BOTÓN
+   ========================================================= */
+
+.result-button {
+  width: 100%;
+
+  padding: 13px 20px;
+
+  border: 1px solid transparent;
+
+  border-radius: 12px;
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* =========================================================
+   BOTÓN — PAGO CONFIRMADO
+   ========================================================= */
+
+.result-button.confirmed {
+  background: #2e8b70;
+
+  border-color: rgba(56, 193, 114, 0.45);
+}
+
+
+.result-button.confirmed:hover {
+  background: #38a982;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(56, 193, 114, 0.18);
+}
+
+
+/* =========================================================
+   BOTÓN — PAGO NO ENCONTRADO
+   ========================================================= */
+
+.result-button.not-found {
+  background: #b8892f;
+
+  border-color: rgba(220, 170, 60, 0.45);
+}
+
+
+.result-button.not-found:hover {
+  background: #d09f38;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(220, 170, 60, 0.18);
+}
+
+
+/* =========================================================
+   BOTÓN — ERROR
+   ========================================================= */
+
+.result-button.error {
+  background: #b83f3f;
+
+  border-color: rgba(220, 70, 70, 0.45);
+}
+
+
+.result-button.error:hover {
+  background: #d14b4b;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(220, 70, 70, 0.18);
+}
+
+
+/* =========================================================
+   ANIMACIÓN
+   ========================================================= */
+
+@keyframes resultModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 500px) {
+  .result-overlay {
+    padding: 16px;
+  }
+
+  .result-modal {
+    padding: 32px 20px 24px;
+  }
+}
+
+/* =========================================================
+   ESTADOS DEL RESULTADO
+   ========================================================= */
+
+/* PAGO CONFIRMADO */
+
+.result-icon.confirmed {
+  background: rgba(56, 193, 114, 0.12);
+
+  border: 1px solid rgba(56, 193, 114, 0.45);
+
+  color: #38c172;
+
+  box-shadow:
+    0 0 20px rgba(56, 193, 114, 0.12);
+}
+
+.result-status.confirmed {
+  color: #38c172;
+}
+
+
+/* PAGO NO ENCONTRADO */
+
+.result-icon.not-found {
+  background: rgba(220, 170, 60, 0.12);
+
+  border: 1px solid rgba(220, 170, 60, 0.4);
+
+  color: #dcaa3c;
+
+  box-shadow:
+    0 0 20px rgba(220, 170, 60, 0.1);
+}
+
+.result-status.not-found {
+  color: #dcaa3c;
+}
+
+
+/* ERROR */
+
+.result-icon.error {
+  background: rgba(220, 70, 70, 0.12);
+
+  border: 1px solid rgba(220, 70, 70, 0.4);
+
+  color: #dc4646;
+
+  box-shadow:
+    0 0 20px rgba(220, 70, 70, 0.1);
+}
+
+.result-status.error {
+  color: #dc4646;
+}
+
+/* =========================================================
+   INFORMACIÓN DE BÚSQUEDA
+   ========================================================= */
+
+.result-search-info {
+  padding: 12px 16px;
+
+  background: rgba(220, 170, 60, 0.08);
+
+  border-bottom: 1px solid rgba(220, 170, 60, 0.18);
+
+  text-align: left;
+}
+
+
+.result-search-info span {
+  color: #dcaa3c;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+}
+
+
+/* =========================================================
+   INFORMACIÓN DE ERROR
+   ========================================================= */
+
+.result-error-info {
+  padding: 16px;
+
+  background: rgba(220, 70, 70, 0.08);
+
+  text-align: left;
+}
+
+
+.result-error-info span {
+  display: block;
+
+  color: #e07a7a;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}

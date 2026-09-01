@@ -1,0 +1,131 @@
+/* =========================================================
+   HEADER — PAGOCHECK GLASS
+   ========================================================= */
+
+.app-header {
+  position: sticky;
+  top: 10px;
+
+  z-index: 100;
+
+  width: calc(100% - 24px);
+
+  margin: 0 auto;
+
+  background: rgba(0, 60, 67, 0.48);
+
+  border: 1px solid rgba(119, 176, 170, 0.2);
+
+  border-radius: 18px;
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.16);
+}
+
+/* =========================================================
+   CONTENEDOR
+   ========================================================= */
+
+.header-content {
+  width: min(1100px, calc(100% - 40px));
+  min-height: 68px;
+
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* =========================================================
+   MARCA
+   ========================================================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  color: var(--text);
+
+  font-size: 19px;
+  font-weight: 700;
+
+  letter-spacing: -0.4px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: var(--radius-sm);
+
+  background: var(--primary);
+  color: var(--accent-light);
+
+  font-size: 18px;
+  font-weight: 700;
+
+  box-shadow:
+    0 4px 15px rgba(19, 93, 102, 0.35);
+}
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+.header-status {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: var(--secondary);
+
+  box-shadow:
+    0 0 0 3px rgba(119, 176, 170, 0.15);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .header-content {
+    width: calc(100% - 28px);
+    min-height: 60px;
+  }
+
+  .brand {
+    font-size: 17px;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-status {
+    font-size: 11px;
+  }
+}
