@@ -19,7 +19,11 @@ body {
   margin: 0;
   min-width: 320px;
 
-  background: #000000;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(19, 93, 102, 0.38) 0%, transparent 52%),
+    radial-gradient(ellipse 90% 70% at 50% 115%, rgba(0, 60, 67, 0.95) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 50% at 50% 45%, #050505 0%, #000000 70%),
+    #000000;
   color: var(--text);
 
   font-family: var(--font-main);
@@ -34,7 +38,7 @@ body {
 
 #root {
   min-height: 100vh;
-  background: #000000;
+  background: transparent;
 }
 
 /* =========================================================
