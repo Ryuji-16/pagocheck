@@ -1,9 +1,46 @@
 .vuelto-screen {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
-.vuelto-screen .modal-back-button {
-  align-self: flex-start;
+.vuelto-screen .modal {
+  width: min(650px, 100%);
+}
+
+.cedula-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+}
+
+.cedula-row select {
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  padding: 0 8px;
+}
+
+.amount-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.amount-mode button {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.amount-mode button.active {
+  border-color: rgba(119, 176, 170, 0.45);
+  background: rgba(119, 176, 170, 0.16);
+  color: var(--text);
 }

@@ -1,66 +1,234 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import BankSelect from './BankSelect'
+import './css/ManualVerification.css'
 import './css/Modals.css'
 import './css/Vuelto.css'
 
+const RATE_KEY = 'pagocheck-usd-rate'
+
+function readRate() {
+  try {
+    return localStorage.getItem(RATE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function parseAmount(value) {
+  const normalized = String(value || '')
+    .trim()
+    .replace(/\s/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+
+  if (!normalized) return NaN
+  return Number(normalized)
+}
+
+function formatBs(value) {
+  if (!Number.isFinite(value)) return ''
+  return value.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
 function Vuelto({ onBack }) {
-  const [amount, setAmount] = useState('')
+  const [bank, setBank] = useState('')
   const [phone, setPhone] = useState('')
+  const [idType, setIdType] = useState('V')
+  const [cedula, setCedula] = useState('')
+  const [mode, setMode] = useState('ves')
+  const [rate, setRate] = useState(readRate)
+  const [usd, setUsd] = useState('')
+  const [ves, setVes] = useState('')
+  const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
+
+  const convertedBs = useMemo(() => {
+    const usdValue = parseAmount(usd)
+    const rateValue = parseAmount(rate)
+    if (!usdValue || !rateValue) return ''
+    return formatBs(usdValue * rateValue)
+  }, [usd, rate])
+
+  const amountBs = mode === 'usd' ? convertedBs : ves
 
   function handleSubmit(event) {
     event.preventDefault()
+    setFormError('')
+    setMessage('')
 
-    if (!amount.trim() || !phone.trim()) {
-      setMessage('Escribe el monto y el teléfono.')
+    if (!bank) {
+      setFormError('Selecciona el banco.')
       return
     }
 
-    setMessage('Simulación: el vuelto no se envía todavía. Aquí irá la API de Banesco.')
+    if (!phone.trim()) {
+      setFormError('Ingresa el número de teléfono.')
+      return
+    }
+
+    if (!cedula.trim()) {
+      setFormError('Ingresa el número de cédula.')
+      return
+    }
+
+    const amountValue = parseAmount(amountBs)
+    if (!amountValue) {
+      setFormError('Ingresa el monto en bolívares.')
+      return
+    }
+
+    if (mode === 'usd' && !parseAmount(rate)) {
+      setFormError('Ingresa la tasa USD a Bs.')
+      return
+    }
+
+    setMessage(
+      `Simulación: se enviaría Bs. ${formatBs(amountValue)} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}. Aquí irá la API de Banesco.`
+    )
   }
 
   return (
     <section className="vuelto-screen">
-      <button type="button" className="modal-back-button" onClick={onBack}>
-        ← Menú
-      </button>
+      <div className="modal">
+        <button type="button" className="modal-back-button" onClick={onBack}>
+          ← Menú
+        </button>
 
-      <div className="app-panel">
-        <h2>Dar vuelto</h2>
-        <p className="panel-copy">
-          Más adelante esta pantalla hablará con Banesco. Hoy solo guarda el flujo.
-        </p>
+        <div className="modal-header">
+          <div className="modal-icon">⇄</div>
+          <h2 className="modal-title">Dar vuelto</h2>
+          <p className="modal-description">
+            Datos de un pago móvil. Todavía no se envía al banco.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          {message && <p className="app-form-ok">{message}</p>}
+        <form className="manual-form" onSubmit={handleSubmit}>
+          <BankSelect
+            value={bank}
+            onChange={(nextBank) => {
+              setBank(nextBank)
+              setFormError('')
+            }}
+          />
 
-          <label className="app-field">
-            Monto
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="Bs. 0,00"
-              value={amount}
-              onChange={(event) => {
-                setAmount(event.target.value)
-                setMessage('')
-              }}
-            />
-          </label>
-
-          <label className="app-field">
+          <label>
             Teléfono
             <input
               type="tel"
+              inputMode="numeric"
               placeholder="0412-0000000"
               value={phone}
               onChange={(event) => {
                 setPhone(event.target.value)
-                setMessage('')
+                setFormError('')
               }}
             />
           </label>
 
-          <button type="submit" className="app-button">
+          <label>
+            Cédula
+            <div className="cedula-row">
+              <select
+                value={idType}
+                onChange={(event) => setIdType(event.target.value)}
+              >
+                <option value="V">V</option>
+                <option value="E">E</option>
+                <option value="J">J</option>
+                <option value="G">G</option>
+              </select>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Número de cédula"
+                value={cedula}
+                onChange={(event) => {
+                  setCedula(event.target.value.replace(/[^\d]/g, ''))
+                  setFormError('')
+                }}
+              />
+            </div>
+          </label>
+
+          <div className="amount-mode">
+            <button
+              type="button"
+              className={mode === 'ves' ? 'active' : ''}
+              onClick={() => setMode('ves')}
+            >
+              Manual Bs
+            </button>
+            <button
+              type="button"
+              className={mode === 'usd' ? 'active' : ''}
+              onClick={() => setMode('usd')}
+            >
+              Desde USD
+            </button>
+          </div>
+
+          {mode === 'usd' && (
+            <>
+              <label>
+                Tasa (Bs por 1 USD)
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ej. 200"
+                  value={rate}
+                  onChange={(event) => {
+                    const next = event.target.value
+                    setRate(next)
+                    localStorage.setItem(RATE_KEY, next)
+                    setFormError('')
+                  }}
+                />
+              </label>
+
+              <label>
+                Monto USD
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="3"
+                  value={usd}
+                  onChange={(event) => {
+                    setUsd(event.target.value)
+                    setFormError('')
+                  }}
+                />
+              </label>
+
+              <label>
+                Monto a enviar (Bs)
+                <input type="text" readOnly value={convertedBs} placeholder="0,00" />
+              </label>
+            </>
+          )}
+
+          {mode === 'ves' && (
+            <label>
+              Monto Bs
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={ves}
+                onChange={(event) => {
+                  setVes(event.target.value)
+                  setFormError('')
+                }}
+              />
+            </label>
+          )}
+
+          {formError && <p className="form-error">{formError}</p>}
+          {message && <p className="app-form-ok">{message}</p>}
+
+          <button type="submit" className="verify-button">
             Enviar vuelto
           </button>
         </form>

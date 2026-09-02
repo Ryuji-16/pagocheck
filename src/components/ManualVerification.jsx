@@ -1,129 +1,88 @@
-import { useEffect, useRef, useState } from 'react'
-import { BANKS, formatBankLabel } from '../services/banks'
+import { useState } from 'react'
+import BankSelect from './BankSelect'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 
-function ManualVerification({
-  onVerify,
-  onBack,
-  isVerifying
-}) {
-  function formatToday() {
-    const today = new Date()
-    const day = String(today.getDate()).padStart(2, '0')
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    return `${day}/${month}/${today.getFullYear()}`
-  }
+function formatToday() {
+  const today = new Date()
+  const day = String(today.getDate()).padStart(2, '0')
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  return `${day}/${month}/${today.getFullYear()}`
+}
 
-  function isValidDisplayDate(value) {
-    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-    if (!match) return false
+function isValidDisplayDate(value) {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!match) return false
 
-    const day = Number(match[1])
-    const month = Number(match[2])
-    const year = Number(match[3])
-    const parsed = new Date(year, month - 1, day)
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  const parsed = new Date(year, month - 1, day)
 
-    return (
-      parsed.getFullYear() === year &&
-      parsed.getMonth() === month - 1 &&
-      parsed.getDate() === day
-    )
-  }
+  return (
+    parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day
+  )
+}
 
+function ManualVerification({ onVerify, onBack, isVerifying }) {
   const [date, setDate] = useState(formatToday)
   const [reference, setReference] = useState('')
   const [phone, setPhone] = useState('')
   const [bank, setBank] = useState('')
   const [formError, setFormError] = useState('')
-  const [isBankOpen, setIsBankOpen] = useState(false)
-  const [bankSearch, setBankSearch] = useState('')
-  const bankSelectRef = useRef(null)
-  const [highlightedBankIndex, setHighlightedBankIndex] = useState(0)
-  const filteredBanks = BANKS.filter((item) => {
-    const label = formatBankLabel(item).toLowerCase()
-    return label.includes(bankSearch.toLowerCase())
-  })
 
   function handleSubmit() {
-  if (isVerifying) return
+    if (isVerifying) return
 
-  setFormError('')
+    setFormError('')
 
-  if (!isValidDisplayDate(date.trim())) {
-    setFormError('Escribe la fecha como DD/MM/AAAA.')
-    return
-  }
-
-  if (!reference.trim()) {
-    setFormError('Ingresa el número de referencia.')
-    return
-  }
-
-  if (!phone.trim()) {
-    setFormError('Ingresa el número de teléfono.')
-    return
-  }
-
-  if (!bank) {
-    setFormError('Selecciona el banco.')
-    return
-  }
-
-  onVerify({
-    date: date.trim(),
-    reference: reference.trim(),
-    phone: phone.trim(),
-    bank
-  })
-}
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      bankSelectRef.current &&
-      !bankSelectRef.current.contains(event.target)
-    ) {
-      setIsBankOpen(false)
-      setBankSearch('')
+    if (!isValidDisplayDate(date.trim())) {
+      setFormError('Escribe la fecha como DD/MM/AAAA.')
+      return
     }
-  }
 
-  document.addEventListener('mousedown', handleClickOutside)
+    if (!reference.trim()) {
+      setFormError('Ingresa el número de referencia.')
+      return
+    }
 
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside)
+    if (!phone.trim()) {
+      setFormError('Ingresa el número de teléfono.')
+      return
+    }
+
+    if (!bank) {
+      setFormError('Selecciona el banco.')
+      return
+    }
+
+    onVerify({
+      date: date.trim(),
+      reference: reference.trim(),
+      phone: phone.trim(),
+      bank
+    })
   }
-}, [])
 
   return (
     <div className="manual-verification">
-
-      <button
-        type="button"
-        className="modal-back-button"
-        onClick={onBack}
-      >
+      <button type="button" className="modal-back-button" onClick={onBack}>
         ← Cambiar método
       </button>
 
       <div className="modal-header">
-        <div className="modal-icon">
-          ✏️
-        </div>
-
+        <div className="modal-icon">✏️</div>
         <h2 className="modal-title">Datos del pago</h2>
-
         <p className="modal-description">
           Introduce los datos de la operación manualmente.
         </p>
       </div>
 
       <div className="manual-form">
-
         <label>
           Fecha
-
           <input
             type="text"
             inputMode="numeric"
@@ -147,192 +106,49 @@ useEffect(() => {
 
         <label>
           Referencia
-
           <input
-  type="text"
-  value={reference}
-  onChange={(event) => {
-    setReference(event.target.value)
-    setFormError('')
-  }}
-  placeholder="Número de referencia"
-/>
+            type="text"
+            value={reference}
+            placeholder="Número de referencia"
+            onChange={(event) => {
+              setReference(event.target.value)
+              setFormError('')
+            }}
+          />
         </label>
 
         <label>
           Teléfono
-
           <input
-  type="tel"
-  value={phone}
-  onChange={(event) => {
-    setPhone(event.target.value)
-    setFormError('')
-  }}
-  placeholder="Número de teléfono"
-/>
+            type="tel"
+            value={phone}
+            placeholder="Número de teléfono"
+            onChange={(event) => {
+              setPhone(event.target.value)
+              setFormError('')
+            }}
+          />
         </label>
 
-        <label className="bank-field">
-  <span>Banco</span>
-
-  <div
-  className="bank-select"
-  ref={bankSelectRef}
-  onKeyDown={(event) => {
-  if (!isBankOpen) return
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-
-    setIsBankOpen(false)
-    setBankSearch('')
-    setHighlightedBankIndex(0)
-
-    return
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-
-    if (filteredBanks.length === 0) return
-
-    setHighlightedBankIndex((current) =>
-      current < filteredBanks.length - 1
-        ? current + 1
-        : 0
-    )
-
-    return
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault()
-
-    if (filteredBanks.length === 0) return
-
-    setHighlightedBankIndex((current) =>
-      current > 0
-        ? current - 1
-        : filteredBanks.length - 1
-    )
-
-    return
-  }
-
-  if (event.key === 'Enter') {
-    event.preventDefault()
-
-    if (filteredBanks.length === 0) return
-
-    setBank(formatBankLabel(filteredBanks[highlightedBankIndex]))
-    setBankSearch('')
-    setIsBankOpen(false)
-    setHighlightedBankIndex(0)
-    setFormError('')
-  }
-}}
->
-    <button
-  type="button"
-  className="bank-select-button"
-  onClick={() => {
-    setIsBankOpen(!isBankOpen)
-    setHighlightedBankIndex(0)
-  }}
-  onKeyDown={(event) => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault()
-
-      if (!isBankOpen) {
-        setIsBankOpen(true)
-
-        const currentIndex = filteredBanks.findIndex(
-          (item) => formatBankLabel(item) === bank
-        )
-
-        setHighlightedBankIndex(
-          currentIndex >= 0 ? currentIndex : 0
-        )
-      }
-    }
-  }}
->
-  <span>
-    {bank || 'Selecciona un banco'}
-  </span>
-
-  <span className="bank-select-arrow">
-    {isBankOpen ? '▴' : '▾'}
-  </span>
-</button>
-
-    {isBankOpen && (
-      <div
-        className="bank-select-menu"
-        onTouchMove={(event) => event.stopPropagation()}
-      >
-        <input
-          type="text"
-          className="bank-search"
-          placeholder="Buscar banco o código..."
-          value={bankSearch}
-          onChange={(event) =>
-            setBankSearch(event.target.value)
-          }
+        <BankSelect
+          value={bank}
+          onChange={(nextBank) => {
+            setBank(nextBank)
+            setFormError('')
+          }}
         />
 
-        <div className="bank-options">
-          {filteredBanks.length > 0 ? (
-            filteredBanks.map((item, index) => (
-  <button
-    key={item.code}
-    type="button"
-    className={
-      index === highlightedBankIndex
-        ? 'bank-option highlighted'
-        : 'bank-option'
-    }
-    onClick={() => {
-      setBank(formatBankLabel(item))
-      setBankSearch('')
-      setIsBankOpen(false)
-      setHighlightedBankIndex(0)
-      setFormError('')
-    }}
-  >
-    {formatBankLabel(item)}
-  </button>
-))
-          ) : (
-            <p className="bank-no-results">
-              No se encontró ningún banco
-            </p>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
-
-</label>
-
-       {formError && (
-         <p className="form-error">
-           {formError}
-         </p>
-        )}
+        {formError && <p className="form-error">{formError}</p>}
 
         <button
-  type="button"
-  className="verify-button"
-  onClick={handleSubmit}
-  disabled={isVerifying}
->
-  {isVerifying ? '🔄Verificando...' : '✓ Verificar pago'}
-</button>
-
+          type="button"
+          className="verify-button"
+          onClick={handleSubmit}
+          disabled={isVerifying}
+        >
+          {isVerifying ? '🔄Verificando...' : '✓ Verificar pago'}
+        </button>
       </div>
-
     </div>
   )
 }
