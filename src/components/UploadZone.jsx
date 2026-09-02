@@ -15,6 +15,7 @@ function UploadZone() {
   const [verificationResult, setVerificationResult] = useState(null)
   const [verificationMethod, setVerificationMethod] = useState(null)
   const [ocrData, setOcrData] = useState(null)
+  const [extractError, setExtractError] = useState('')
 
   function handleFile(selectedFile) {
     if (selectedFile && selectedFile.type.startsWith('image/')) {
@@ -22,6 +23,7 @@ function UploadZone() {
       setPreview(URL.createObjectURL(selectedFile))
       setVerificationResult(null)
       setOcrData(null)
+      setExtractError('')
     }
   }
 
@@ -159,6 +161,54 @@ function UploadZone() {
     setPreview(null)
     setVerificationResult(null)
     setOcrData(null)
+    setExtractError('')
+  }
+
+  const fieldLabels = {
+    reference: 'referencia',
+    date: 'fecha',
+    phone: 'teléfono',
+    bank: 'banco',
+    amount: 'monto'
+  }
+
+  async function handleAnalyzeReceipt() {
+    try {
+      setIsVerifying(true)
+      setVerificationResult(null)
+      setExtractError('')
+
+      const extractedData = await extractPaymentData(file)
+      setOcrData(extractedData)
+
+      const requiredFields = ['reference', 'date', 'bank']
+      const missingFields = requiredFields.filter((field) => {
+        const value = extractedData[field]
+        return !value || value.toString().trim() === ''
+      })
+
+      if (missingFields.length > 0) {
+        const readable = missingFields
+          .map((field) => fieldLabels[field] || field)
+          .join(', ')
+
+        setExtractError(
+          `No se pudieron leer estos datos del comprobante: ${readable}. Prueba con otra captura o usa datos manuales.`
+        )
+        return
+      }
+
+      const result = await verifyPayment(extractedData)
+      setVerificationResult(result)
+    } catch (error) {
+      console.error('Error al procesar el comprobante:', error)
+      setVerificationResult({
+        status: 'error',
+        message: 'No se pudo analizar el comprobante.'
+      })
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   function handleCloseResult() {
@@ -303,62 +353,16 @@ function UploadZone() {
                   ↻ Cambiar imagen
                 </button>
 
+                {extractError && (
+                  <p className="form-error">{extractError}</p>
+                )}
+
                 <button
-  type="button"
-  className="verify-button"
-  onClick={async () => {
-  try {
-    setIsVerifying(true)
-    setVerificationResult(null)
-
-    const extractedData = await extractPaymentData(file)
-
-    setOcrData(extractedData)
-
-    const requiredFields = [
-      'reference',
-      'date',
-      'phone',
-      'bank'
-    ]
-
-    const missingFields = requiredFields.filter(
-      (field) =>
-        !extractedData[field] ||
-        extractedData[field].toString().trim() === ''
-    )
-
-    if (missingFields.length > 0) {
-      setIsVerifying(false)
-
-      console.log(
-        'Datos faltantes detectados por OCR:',
-        missingFields
-      )
-
-      return
-    }
-
-    const result = await verifyPayment(extractedData)
-
-    setVerificationResult(result)
-
-  } catch (error) {
-    console.error(
-      'Error al procesar el comprobante:',
-      error
-    )
-
-    setVerificationResult({
-      status: 'error',
-      message: 'No se pudo analizar el comprobante.'
-    })
-  } finally {
-    setIsVerifying(false)
-  }
-}}
-  disabled={isVerifying}
->
+                  type="button"
+                  className="verify-button"
+                  onClick={handleAnalyzeReceipt}
+                  disabled={isVerifying}
+                >
                   {isVerifying
                     ? '🔄 Analizando comprobante...'
                     : '✓ Verificar pago'}

@@ -210,4 +210,20 @@
   .modal-title {
     font-size: 22px;
   }
+
+  .modal-overlay {
+    padding: 16px 16px 88px;
+  }
+}
+
+.form-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(201, 74, 74, 0.16);
+  border: 1px solid rgba(201, 74, 74, 0.35);
+  color: #f3c1c1;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
 }

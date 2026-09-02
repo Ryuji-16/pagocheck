@@ -15,7 +15,7 @@ function Header() {
 
         <div className="header-status">
           <span className="status-dot"></span>
-          Sistema activo
+          Modo demo
         </div>
 
       </div>

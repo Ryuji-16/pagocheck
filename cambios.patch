@@ -1,0 +1,365 @@
+diff --git a/index.html b/index.html
+index e76a730..4b7d237 100644
+--- a/index.html
++++ b/index.html
+@@ -4,7 +4,8 @@
+     <meta charset="UTF-8" />
+     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+-    <title>pagocheck</title>
++    <title>PagoCheck — Verifica tu pago</title>
++    <meta name="description" content="Comprueba que un pago móvil o transferencia fue recibido. Prototipo." />
+   </head>
+   <body>
+     <div id="root"></div>
+diff --git a/src/App.css b/src/App.css
+index d30bba4..bad4a71 100644
+--- a/src/App.css
++++ b/src/App.css
+@@ -8,11 +8,32 @@ main {
+ 
+   margin: 0 auto;
+ 
+-  padding: 48px 0 80px;
++  padding: 28px 0 96px;
+ 
+   text-align: center;
+ }
+ 
++.demo-banner {
++  width: fit-content;
++  max-width: 100%;
++
++  margin: 0 auto 22px;
++
++  padding: 8px 14px;
++
++  border-radius: 999px;
++
++  background: rgba(217, 164, 65, 0.16);
++
++  border: 1px solid rgba(217, 164, 65, 0.35);
++
++  color: #f3d48a;
++
++  font-size: 13px;
++  font-weight: 600;
++  line-height: 1.4;
++}
++
+ /* =========================================================
+    TÍTULO PRINCIPAL
+    ========================================================= */
+@@ -48,16 +69,20 @@ main > p {
+   main {
+     width: calc(100% - 28px);
+ 
+-    padding: 40px 0 60px;
++    padding: 20px 0 108px;
+   }
+ 
+   main > h1 {
+-    font-size: 28px;
++    font-size: 26px;
+   }
+ 
+   main > p {
+-    margin-bottom: 30px;
++    margin-bottom: 24px;
+ 
+     font-size: 14px;
+   }
++
++  .demo-banner {
++    font-size: 12px;
++  }
+ }
+\ No newline at end of file
+diff --git a/src/App.jsx b/src/App.jsx
+index 5126342..de8e384 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -8,8 +8,12 @@ function App() {
+       <Header />
+ 
+       <main>
++        <p className="demo-banner" role="status">
++          Prototipo de prueba. Los resultados aún no consultan un banco real.
++        </p>
++
+         <h1>Verifica tu pago</h1>
+-        
++
+         <p>
+           Comprueba que el pago fue recibido correctamente.
+         </p>
+diff --git a/src/components/Header.jsx b/src/components/Header.jsx
+index 9b9dc24..32a0a8d 100644
+--- a/src/components/Header.jsx
++++ b/src/components/Header.jsx
+@@ -15,7 +15,7 @@ function Header() {
+ 
+         <div className="header-status">
+           <span className="status-dot"></span>
+-          Sistema activo
++          Modo demo
+         </div>
+ 
+       </div>
+diff --git a/src/components/UploadZone.jsx b/src/components/UploadZone.jsx
+index 45bb136..99df8f3 100644
+--- a/src/components/UploadZone.jsx
++++ b/src/components/UploadZone.jsx
+@@ -15,6 +15,7 @@ function UploadZone() {
+   const [verificationResult, setVerificationResult] = useState(null)
+   const [verificationMethod, setVerificationMethod] = useState(null)
+   const [ocrData, setOcrData] = useState(null)
++  const [extractError, setExtractError] = useState('')
+ 
+   function handleFile(selectedFile) {
+     if (selectedFile && selectedFile.type.startsWith('image/')) {
+@@ -22,6 +23,7 @@ function UploadZone() {
+       setPreview(URL.createObjectURL(selectedFile))
+       setVerificationResult(null)
+       setOcrData(null)
++      setExtractError('')
+     }
+   }
+ 
+@@ -159,6 +161,54 @@ function UploadZone() {
+     setPreview(null)
+     setVerificationResult(null)
+     setOcrData(null)
++    setExtractError('')
++  }
++
++  const fieldLabels = {
++    reference: 'referencia',
++    date: 'fecha',
++    phone: 'teléfono',
++    bank: 'banco',
++    amount: 'monto'
++  }
++
++  async function handleAnalyzeReceipt() {
++    try {
++      setIsVerifying(true)
++      setVerificationResult(null)
++      setExtractError('')
++
++      const extractedData = await extractPaymentData(file)
++      setOcrData(extractedData)
++
++      const requiredFields = ['reference', 'date', 'bank']
++      const missingFields = requiredFields.filter((field) => {
++        const value = extractedData[field]
++        return !value || value.toString().trim() === ''
++      })
++
++      if (missingFields.length > 0) {
++        const readable = missingFields
++          .map((field) => fieldLabels[field] || field)
++          .join(', ')
++
++        setExtractError(
++          `No se pudieron leer estos datos del comprobante: ${readable}. Prueba con otra captura o usa datos manuales.`
++        )
++        return
++      }
++
++      const result = await verifyPayment(extractedData)
++      setVerificationResult(result)
++    } catch (error) {
++      console.error('Error al procesar el comprobante:', error)
++      setVerificationResult({
++        status: 'error',
++        message: 'No se pudo analizar el comprobante.'
++      })
++    } finally {
++      setIsVerifying(false)
++    }
+   }
+ 
+   function handleCloseResult() {
+@@ -303,62 +353,16 @@ function UploadZone() {
+                   ↻ Cambiar imagen
+                 </button>
+ 
+-                <button
+-  type="button"
+-  className="verify-button"
+-  onClick={async () => {
+-  try {
+-    setIsVerifying(true)
+-    setVerificationResult(null)
+-
+-    const extractedData = await extractPaymentData(file)
+-
+-    setOcrData(extractedData)
+-
+-    const requiredFields = [
+-      'reference',
+-      'date',
+-      'phone',
+-      'bank'
+-    ]
+-
+-    const missingFields = requiredFields.filter(
+-      (field) =>
+-        !extractedData[field] ||
+-        extractedData[field].toString().trim() === ''
+-    )
+-
+-    if (missingFields.length > 0) {
+-      setIsVerifying(false)
+-
+-      console.log(
+-        'Datos faltantes detectados por OCR:',
+-        missingFields
+-      )
+-
+-      return
+-    }
+-
+-    const result = await verifyPayment(extractedData)
+-
+-    setVerificationResult(result)
+-
+-  } catch (error) {
+-    console.error(
+-      'Error al procesar el comprobante:',
+-      error
+-    )
++                {extractError && (
++                  <p className="form-error">{extractError}</p>
++                )}
+ 
+-    setVerificationResult({
+-      status: 'error',
+-      message: 'No se pudo analizar el comprobante.'
+-    })
+-  } finally {
+-    setIsVerifying(false)
+-  }
+-}}
+-  disabled={isVerifying}
+->
++                <button
++                  type="button"
++                  className="verify-button"
++                  onClick={handleAnalyzeReceipt}
++                  disabled={isVerifying}
++                >
+                   {isVerifying
+                     ? '🔄 Analizando comprobante...'
+                     : '✓ Verificar pago'}
+diff --git a/src/components/css/Modals.css b/src/components/css/Modals.css
+index f854d3d..3104f26 100644
+--- a/src/components/css/Modals.css
++++ b/src/components/css/Modals.css
+@@ -210,4 +210,20 @@
+   .modal-title {
+     font-size: 22px;
+   }
++
++  .modal-overlay {
++    padding: 16px 16px 88px;
++  }
++}
++
++.form-error {
++  margin: 0 0 12px;
++  padding: 10px 12px;
++  border-radius: 10px;
++  background: rgba(201, 74, 74, 0.16);
++  border: 1px solid rgba(201, 74, 74, 0.35);
++  color: #f3c1c1;
++  font-size: 14px;
++  line-height: 1.45;
++  text-align: left;
+ }
+\ No newline at end of file
+diff --git a/src/components/css/VerificationMethod.css b/src/components/css/VerificationMethod.css
+index bce0f8f..9fa68e2 100644
+--- a/src/components/css/VerificationMethod.css
++++ b/src/components/css/VerificationMethod.css
+@@ -3,21 +3,15 @@
+    ========================================================= */
+ 
+ .verification-overlay {
+-  position: fixed;
+-  inset: 0;
+-
+-  z-index: 1000;
++  position: relative;
+ 
+   display: flex;
+   align-items: center;
+   justify-content: center;
+ 
+-  padding: 24px;
+-
+-  background: rgba(0, 0, 0, 0.42);
++  padding: 0;
+ 
+-  backdrop-filter: blur(8px);
+-  -webkit-backdrop-filter: blur(8px);
++  background: transparent;
+ }
+ 
+ 
+@@ -32,7 +26,7 @@
+ 
+   text-align: center;
+ 
+-  background: rgba(11, 41, 45, 0.88);
++  background: rgba(11, 41, 45, 0.96);
+ 
+   border: 1px solid rgba(119, 176, 170, 0.25);
+ 
+@@ -270,11 +264,15 @@
+ 
+ @media (max-width: 650px) {
+   .verification-overlay {
+-    padding: 16px;
++    padding: 0;
+   }
+ 
+   .verification-method {
+-    padding: 32px 20px;
++    padding: 28px 16px 22px;
++  }
++
++  .verification-method .upload-icon {
++    margin-bottom: 14px;
+   }
+ 
+   .verification-method-options {
+@@ -282,10 +280,11 @@
+   }
+ 
+   .verification-method-card {
+-    min-height: 180px;
++    min-height: 0;
++    padding: 22px 20px 36px;
+   }
+ 
+   .verification-method h2 {
+-    font-size: 23px;
++    font-size: 22px;
+   }
+ }
+\ No newline at end of file
+diff --git a/src/services/ocrService.js b/src/services/ocrService.js
+index 35fa47b..aea2d04 100644
+--- a/src/services/ocrService.js
++++ b/src/services/ocrService.js
+@@ -21,6 +21,6 @@ export async function extractPaymentData(file) {
+     date: '10/08/2026',
+     bank: 'Banesco',
+     amount: 'Bs. 150,00',
+-    phone: null,
++    phone: '0412-5551111',
+   }
+ }
+\ No newline at end of file

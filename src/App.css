@@ -8,9 +8,30 @@ main {
 
   margin: 0 auto;
 
-  padding: 48px 0 80px;
+  padding: 28px 0 96px;
 
   text-align: center;
+}
+
+.demo-banner {
+  width: fit-content;
+  max-width: 100%;
+
+  margin: 0 auto 22px;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  background: rgba(217, 164, 65, 0.16);
+
+  border: 1px solid rgba(217, 164, 65, 0.35);
+
+  color: #f3d48a;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 /* =========================================================
@@ -48,16 +69,20 @@ main > p {
   main {
     width: calc(100% - 28px);
 
-    padding: 40px 0 60px;
+    padding: 20px 0 108px;
   }
 
   main > h1 {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   main > p {
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 
     font-size: 14px;
+  }
+
+  .demo-banner {
+    font-size: 12px;
   }
 }

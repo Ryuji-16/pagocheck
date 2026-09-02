@@ -8,8 +8,12 @@ function App() {
       <Header />
 
       <main>
+        <p className="demo-banner" role="status">
+          Prototipo de prueba. Los resultados aún no consultan un banco real.
+        </p>
+
         <h1>Verifica tu pago</h1>
-        
+
         <p>
           Comprueba que el pago fue recibido correctamente.
         </p>

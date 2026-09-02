@@ -21,6 +21,6 @@ export async function extractPaymentData(file) {
     date: '10/08/2026',
     bank: 'Banesco',
     amount: 'Bs. 150,00',
-    phone: null,
+    phone: '0412-5551111',
   }
 }
