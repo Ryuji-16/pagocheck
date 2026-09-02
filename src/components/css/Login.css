@@ -1,0 +1,16 @@
+.login-screen {
+  display: flex;
+  justify-content: center;
+}
+
+.login-hint {
+  margin: 16px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.login-hint strong {
+  color: var(--text-secondary);
+}

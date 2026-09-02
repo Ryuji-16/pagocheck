@@ -50,12 +50,17 @@
 
   gap: 10px;
 
+  padding: 0;
+  border: 0;
+  background: transparent;
+
   color: var(--text);
 
   font-size: 19px;
   font-weight: 700;
 
   letter-spacing: -0.4px;
+  cursor: pointer;
 }
 
 .brand-icon {
@@ -82,6 +87,12 @@
    ESTADO
    ========================================================= */
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .header-status {
   display: flex;
   align-items: center;
@@ -92,6 +103,18 @@
 
   font-size: 12px;
   font-weight: 500;
+}
+
+.header-logout {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(201, 74, 74, 0.35);
+  border-radius: 8px;
+  background: rgba(201, 74, 74, 0.12);
+  color: #f3c1c1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .status-dot {

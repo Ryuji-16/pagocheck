@@ -1,0 +1,9 @@
+.vuelto-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vuelto-screen .modal-back-button {
+  align-self: flex-start;
+}
