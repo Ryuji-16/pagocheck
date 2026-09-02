@@ -69,6 +69,8 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
+  min-width: 0;
+  max-width: 100%;
 
   color: var(--text-secondary);
 
@@ -177,6 +179,7 @@
    ========================================================= */
 
 .bank-select-button {
+  box-sizing: border-box;
   width: 100%;
   min-height: 46px;
 

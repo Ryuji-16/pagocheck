@@ -268,23 +268,29 @@
   }
 
   .verification-method {
-    padding: 28px 16px 22px;
+    padding: 16px 12px 14px;
   }
 
-  .verification-method .upload-icon {
-    margin-bottom: 14px;
+  .verification-method .upload-icon,
+  .verification-method h2,
+  .verification-method > p {
+    display: none;
   }
 
   .verification-method-options {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .verification-method-card {
     min-height: 0;
-    padding: 22px 20px 36px;
+    padding: 16px 16px 28px;
   }
 
-  .verification-method h2 {
-    font-size: 22px;
+  .method-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+    font-size: 24px;
   }
 }
