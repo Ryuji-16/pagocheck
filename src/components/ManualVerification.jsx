@@ -115,13 +115,14 @@ useEffect(() => {
           Fecha
 
           <input
-  type="date"
-  value={date}
-  onChange={(event) => {
-    setDate(event.target.value)
-    setFormError('')
-  }}
-/>
+            type="date"
+            lang="es-VE"
+            value={date}
+            onChange={(event) => {
+              setDate(event.target.value)
+              setFormError('')
+            }}
+          />
         </label>
 
         <label>
