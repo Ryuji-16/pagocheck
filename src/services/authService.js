@@ -1,28 +1,70 @@
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
 
-const DEMO_USER = {
-  username: 'demo',
-  password: 'pagocheck'
+const DEFAULT_USERS = {
+  demo: { password: 'pagocheck', role: 'caja', label: 'Prueba' },
+  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1' },
+  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2' },
+  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3' },
+  admin: { password: 'admin123', role: 'admin', label: 'Admin de tienda' }
+}
+
+function toUserRecord(value, fallbackRole = 'caja') {
+  if (value && typeof value === 'object' && value.password) {
+    return {
+      password: String(value.password),
+      role: value.role || fallbackRole,
+      label: value.label || ''
+    }
+  }
+
+  return {
+    password: String(value || ''),
+    role: fallbackRole,
+    label: ''
+  }
 }
 
 function readUsers() {
+  let stored = {}
+
   try {
-    const raw = localStorage.getItem(USERS_KEY)
-    if (raw) return JSON.parse(raw)
+    stored = JSON.parse(localStorage.getItem(USERS_KEY) || '{}') || {}
   } catch {
-    /* ignore */
+    stored = {}
   }
 
-  return { [DEMO_USER.username]: DEMO_USER.password }
+  const users = {}
+
+  for (const [username, meta] of Object.entries(DEFAULT_USERS)) {
+    const saved = stored[username]
+    users[username] = {
+      ...meta,
+      password: saved ? toUserRecord(saved, meta.role).password : meta.password
+    }
+  }
+
+  return users
 }
 
 function writeUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users))
 }
 
+export function getDemoAccounts() {
+  return Object.entries(DEFAULT_USERS).map(([username, meta]) => ({
+    username,
+    password: meta.password,
+    role: meta.role,
+    label: meta.label
+  }))
+}
+
 export function getDemoCredentials() {
-  return { ...DEMO_USER }
+  return {
+    username: 'demo',
+    password: DEFAULT_USERS.demo.password
+  }
 }
 
 export function getSession() {
@@ -44,11 +86,18 @@ export function login(username, password) {
     return { ok: false, message: 'Escribe usuario y clave.' }
   }
 
-  if (!users[name] || users[name] !== pass) {
+  const user = users[name]
+
+  if (!user || user.password !== pass) {
     return { ok: false, message: 'Usuario o clave incorrectos.' }
   }
 
-  const session = { username: name }
+  const session = {
+    username: name,
+    role: user.role,
+    label: user.label || name
+  }
+
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return { ok: true, session }
 }
@@ -59,8 +108,9 @@ export function logout() {
 
 export function changePassword(username, currentPassword, nextPassword) {
   const users = readUsers()
+  const user = users[username]
 
-  if (!users[username] || users[username] !== currentPassword) {
+  if (!user || user.password !== currentPassword) {
     return { ok: false, message: 'La clave actual no es correcta.' }
   }
 
@@ -68,7 +118,10 @@ export function changePassword(username, currentPassword, nextPassword) {
     return { ok: false, message: 'La nueva clave debe tener al menos 6 caracteres.' }
   }
 
-  users[username] = nextPassword
+  users[username] = {
+    ...user,
+    password: nextPassword
+  }
   writeUsers(users)
   return { ok: true }
 }

@@ -44,6 +44,7 @@ function App() {
         {screen === 'menu' && session && (
           <Menu
             username={session.username}
+            label={session.label}
             onOpenVerify={() => setScreen('verify')}
             onOpenVuelto={() => setScreen('vuelto')}
             onOpenSettings={() => setScreen('settings')}

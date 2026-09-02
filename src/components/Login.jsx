@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { getDemoCredentials, login } from '../services/authService'
+import { getDemoAccounts, login } from '../services/authService'
 import './css/Login.css'
 
 function Login({ onLogin }) {
-  const demo = getDemoCredentials()
-  const [username, setUsername] = useState(demo.username)
+  const accounts = getDemoAccounts()
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
@@ -25,7 +25,8 @@ function Login({ onLogin }) {
       <div className="app-panel">
         <h1>Iniciar sesión</h1>
         <p className="panel-copy">
-          Entra para validar pagos o dar vuelto. Prototipo local, sin servidor.
+          Prototipo sin servidor. Estos usuarios están en el código para
+          que cualquiera con el link pueda probarlos.
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -62,9 +63,15 @@ function Login({ onLogin }) {
           </button>
         </form>
 
-        <p className="login-hint">
-          Demo: usuario <strong>{demo.username}</strong> · clave <strong>{demo.password}</strong>
-        </p>
+        <ul className="login-accounts">
+          {accounts.map((account) => (
+            <li key={account.username}>
+              <span>{account.label}</span>
+              <strong>{account.username}</strong>
+              <em>{account.password}</em>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )
