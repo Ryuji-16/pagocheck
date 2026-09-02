@@ -320,7 +320,11 @@
 
   margin-top: 8px;
 
-  overflow-y: auto;
+  overflow-y: scroll;
+
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 
@@ -500,9 +504,17 @@
     z-index: 5000;
 
     max-height: 48vh;
+
+    overflow-y: scroll;
+
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .bank-options {
-    max-height: 32vh;
+    max-height: none;
+
+    overflow: visible;
   }
 }

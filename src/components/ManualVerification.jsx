@@ -103,11 +103,9 @@ useEffect(() => {
   }
 
   document.addEventListener('mousedown', handleClickOutside)
-  document.addEventListener('touchstart', handleClickOutside)
 
   return () => {
     document.removeEventListener('mousedown', handleClickOutside)
-    document.removeEventListener('touchstart', handleClickOutside)
   }
 }, [])
 
@@ -286,7 +284,10 @@ setFormError('')
 </button>
 
     {isBankOpen && (
-      <div className="bank-select-menu">
+      <div
+        className="bank-select-menu"
+        onTouchMove={(event) => event.stopPropagation()}
+      >
         <input
           type="text"
           className="bank-search"
@@ -295,7 +296,6 @@ setFormError('')
           onChange={(event) =>
             setBankSearch(event.target.value)
           }
-          autoFocus
         />
 
         <div className="bank-options">
