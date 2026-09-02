@@ -17,6 +17,17 @@ function UploadZone() {
   const [ocrData, setOcrData] = useState(null)
   const [extractError, setExtractError] = useState('')
 
+  useEffect(() => {
+    const formOpen =
+      verificationMethod === 'image' || verificationMethod === 'manual'
+
+    document.body.classList.toggle('form-open', formOpen)
+
+    return () => {
+      document.body.classList.remove('form-open')
+    }
+  }, [verificationMethod])
+
   function handleFile(selectedFile) {
     if (selectedFile && selectedFile.type.startsWith('image/')) {
       setFile(selectedFile)
