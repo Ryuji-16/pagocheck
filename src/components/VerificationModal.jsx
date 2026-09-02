@@ -191,12 +191,16 @@ function VerificationModal({ result, onClose }) {
         </div>
 
         <button
-  type="button"
-  className={`result-button ${config.iconClass}`}
-  onClick={onClose}
->
-  {buttonText}
-</button>
+          type="button"
+          className={`result-button ${config.iconClass}`}
+          onClick={onClose}
+        >
+          {buttonText}
+        </button>
+
+        <p className="result-demo-note">
+          Resultado de prueba. Aún no se consulta un banco real.
+        </p>
 
       </div>
     </div>
