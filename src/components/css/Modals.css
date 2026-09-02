@@ -189,30 +189,43 @@
    ========================================================= */
 
 @media (max-width: 600px) {
-
   .modal-overlay {
-    padding: 14px;
+    align-items: flex-start;
+
+    padding: 12px 12px 96px;
+
+    overflow-y: auto;
   }
 
   .modal {
-    padding: 24px 20px 26px;
+    width: 100%;
+
+    margin: 8px 0;
+
+    padding: 20px 16px 22px;
 
     border-radius: 20px;
   }
 
   .modal-icon {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
 
-    font-size: 30px;
+    margin-bottom: 14px;
+
+    font-size: 26px;
   }
 
   .modal-title {
-    font-size: 22px;
+    font-size: 20px;
   }
 
-  .modal-overlay {
-    padding: 16px 16px 88px;
+  .modal-description {
+    font-size: 13px;
+  }
+
+  .modal-back-button {
+    margin-bottom: 12px;
   }
 }
 

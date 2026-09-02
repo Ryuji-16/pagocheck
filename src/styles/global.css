@@ -12,13 +12,14 @@
 
 html {
   min-width: 320px;
+  background: #000000;
 }
 
 body {
   margin: 0;
   min-width: 320px;
 
-  background: var(--background);
+  background: #000000;
   color: var(--text);
 
   font-family: var(--font-main);
@@ -33,6 +34,7 @@ body {
 
 #root {
   min-height: 100vh;
+  background: #000000;
 }
 
 /* =========================================================
