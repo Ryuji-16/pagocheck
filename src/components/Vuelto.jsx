@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import BankSelect from './BankSelect'
+import { fetchBcvUsdRate } from '../services/rateService'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 import './css/Vuelto.css'
@@ -15,13 +16,15 @@ function readRate() {
 }
 
 function parseAmount(value) {
-  const normalized = String(value || '')
-    .trim()
-    .replace(/\s/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-
+  let normalized = String(value || '').trim().replace(/\s/g, '')
   if (!normalized) return NaN
+
+  if (normalized.includes(',') && normalized.includes('.')) {
+    normalized = normalized.replace(/\./g, '').replace(',', '.')
+  } else if (normalized.includes(',')) {
+    normalized = normalized.replace(',', '.')
+  }
+
   return Number(normalized)
 }
 
@@ -40,10 +43,36 @@ function Vuelto({ onBack }) {
   const [cedula, setCedula] = useState('')
   const [mode, setMode] = useState('ves')
   const [rate, setRate] = useState(readRate)
+  const [rateMeta, setRateMeta] = useState('')
   const [usd, setUsd] = useState('')
   const [ves, setVes] = useState('')
   const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetchBcvUsdRate()
+      .then((result) => {
+        if (cancelled) return
+        const next = String(result.usd)
+        setRate(next)
+        localStorage.setItem(RATE_KEY, next)
+        setRateMeta(
+          result.date
+            ? `Tasa BCV del ${result.date}`
+            : 'Tasa BCV automática'
+        )
+      })
+      .catch(() => {
+        if (cancelled) return
+        setRateMeta('No se pudo leer el BCV. Puedes poner la tasa a mano.')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const convertedBs = useMemo(() => {
     const usdValue = parseAmount(usd)
@@ -173,20 +202,22 @@ function Vuelto({ onBack }) {
           {mode === 'usd' && (
             <>
               <label>
-                Tasa (Bs por 1 USD)
+                Tasa BCV (Bs por 1 USD)
                 <input
                   type="text"
                   inputMode="decimal"
-                  placeholder="Ej. 200"
+                  placeholder="Se carga sola"
                   value={rate}
                   onChange={(event) => {
                     const next = event.target.value
                     setRate(next)
                     localStorage.setItem(RATE_KEY, next)
+                    setRateMeta('Tasa editada a mano')
                     setFormError('')
                   }}
                 />
               </label>
+              {rateMeta && <p className="rate-note">{rateMeta}</p>}
 
               <label>
                 Monto USD
