@@ -1,59 +1,81 @@
-export async function verifyPayment(data = {}) {
-  // Simulamos el tiempo de respuesta del banco
-  await new Promise((resolve) => {
-    setTimeout(resolve, 2000)
+const DEMO_DELAY_MS = 2000
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
   })
+}
 
-  let bankResponse
+/*
+ * Punto de conexión con el banco.
+ *
+ * Hoy devuelve una simulación.
+ * Cuando exista la API de Banesco, solo se cambia esta función.
+ * verifyPayment() y el resto de la UI no deberían reestructurarse.
+ */
+async function requestBankVerification(query) {
+  await wait(DEMO_DELAY_MS)
+  return simulateBanescoResponse(query)
+}
 
-  // =====================================================
-  // SIMULACIÓN TEMPORAL DE RESPUESTAS DEL BANCO
-  // =====================================================
+function simulateBanescoResponse(query) {
+  const reference = String(query.reference || '').trim()
 
-  if (data.reference === '111111111') {
-    bankResponse = {
-      status: 'not-found',
+  if (reference === '111111111') {
+    return {
+      ok: false,
+      code: 'NOT_FOUND',
       message: 'La transacción no pudo ser localizada.'
     }
-  } else if (data.reference === '999999999') {
-    bankResponse = {
-      status: 'error',
+  }
+
+  if (reference === '999999999') {
+    return {
+      ok: false,
+      code: 'ERROR',
       message: 'Error al procesar la operación.'
     }
-  } else {
-    // ===================================================
-    // RESPUESTA SIMULADA DEL BANCO
-    // ===================================================
-
-    const bankTransaction = {
-      amount: 'Bs. 150,00',
-      reference: data.reference,
-      date: data.date,
-      bank: data.bank,
-      phone: data.phone
-    }
-
-    // ===================================================
-    // ADAPTAMOS LA RESPUESTA DEL BANCO
-    // AL FORMATO QUE UTILIZA PAGOCHECK
-    // ===================================================
-
-    bankResponse = {
-      status: 'confirmed',
-      amount: bankTransaction.amount,
-      reference: bankTransaction.reference,
-      date: bankTransaction.date,
-      bank: bankTransaction.bank,
-      phone: bankTransaction.phone
-    }
   }
-
-  // =====================================================
-  // RESULTADO FINAL PARA PAGOCHECK
-  // =====================================================
 
   return {
-    ...data,
-    ...bankResponse
+    ok: true,
+    amount: 'Bs. 150,00',
+    reference: query.reference,
+    date: query.date,
+    bank: query.bank,
+    phone: query.phone
   }
+}
+
+function toPagoCheckResult(query, bankResponse) {
+  if (!bankResponse.ok && bankResponse.code === 'NOT_FOUND') {
+    return {
+      ...query,
+      status: 'not-found',
+      message: bankResponse.message
+    }
+  }
+
+  if (!bankResponse.ok) {
+    return {
+      ...query,
+      status: 'error',
+      message: bankResponse.message || 'Error al procesar la operación.'
+    }
+  }
+
+  return {
+    ...query,
+    status: 'confirmed',
+    amount: bankResponse.amount,
+    reference: bankResponse.reference,
+    date: bankResponse.date,
+    bank: bankResponse.bank,
+    phone: bankResponse.phone
+  }
+}
+
+export async function verifyPayment(data = {}) {
+  const bankResponse = await requestBankVerification(data)
+  return toPagoCheckResult(data, bankResponse)
 }
