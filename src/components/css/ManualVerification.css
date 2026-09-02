@@ -8,40 +8,6 @@
 
 
 /* =========================================================
-   BOTÓN CAMBIAR MÉTODO
-   ========================================================= */
-
-.modal-back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  margin: 0 auto 22px;
-  padding: 6px 10px;
-
-  border: 0;
-  border-radius: 8px;
-
-  background: transparent;
-  color: var(--text-secondary);
-
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  transition:
-    color 0.2s ease,
-    background 0.2s ease;
-}
-
-.modal-back-button:hover {
-  color: var(--text);
-  background: rgba(119, 176, 170, 0.08);
-}
-
-
-/* =========================================================
    FORMULARIO
    ========================================================= */
 
@@ -125,29 +91,6 @@
 
   box-shadow:
     0 0 0 3px rgba(119, 176, 170, 0.08);
-}
-
-
-/* =========================================================
-   FECHA
-   ========================================================= */
-
-.manual-form input[type="date"] {
-  display: block;
-
-  max-width: 100%;
-  min-width: 0;
-
-  color-scheme: dark;
-  accent-color: var(--secondary);
-
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.manual-form input[type="date"]::-webkit-date-and-time-value {
-  text-align: left;
-  min-width: 0;
 }
 
 
