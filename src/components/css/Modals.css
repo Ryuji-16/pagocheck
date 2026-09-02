@@ -39,7 +39,7 @@
 
   padding: 30px 34px 34px;
 
-  background: rgba(8, 16, 18, 0.55);
+  background: rgba(8, 14, 16, 0.94);
 
   border: 1px solid rgba(255, 255, 255, 0.14);
 
@@ -205,6 +205,8 @@
     padding: 20px 16px 22px;
 
     border-radius: 20px;
+
+    overflow: visible;
   }
 
   .modal-icon {

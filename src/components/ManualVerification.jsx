@@ -7,7 +7,30 @@ function ManualVerification({
   onBack,
   isVerifying
 }) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  function formatToday() {
+    const today = new Date()
+    const day = String(today.getDate()).padStart(2, '0')
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    return `${day}/${month}/${today.getFullYear()}`
+  }
+
+  function isValidDisplayDate(value) {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+    if (!match) return false
+
+    const day = Number(match[1])
+    const month = Number(match[2])
+    const year = Number(match[3])
+    const parsed = new Date(year, month - 1, day)
+
+    return (
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    )
+  }
+
+  const [date, setDate] = useState(formatToday)
   const [reference, setReference] = useState('')
   const [phone, setPhone] = useState('')
   const [bank, setBank] = useState('')
@@ -40,8 +63,8 @@ function ManualVerification({
 
   setFormError('')
 
-  if (!date) {
-    setFormError('Selecciona la fecha del pago.')
+  if (!isValidDisplayDate(date.trim())) {
+    setFormError('Escribe la fecha como DD/MM/AAAA.')
     return
   }
 
@@ -61,7 +84,7 @@ function ManualVerification({
   }
 
   onVerify({
-    date,
+    date: date.trim(),
     reference: reference.trim(),
     phone: phone.trim(),
     bank
@@ -80,9 +103,11 @@ useEffect(() => {
   }
 
   document.addEventListener('mousedown', handleClickOutside)
+  document.addEventListener('touchstart', handleClickOutside)
 
   return () => {
     document.removeEventListener('mousedown', handleClickOutside)
+    document.removeEventListener('touchstart', handleClickOutside)
   }
 }, [])
 
@@ -115,11 +140,21 @@ useEffect(() => {
           Fecha
 
           <input
-            type="date"
-            lang="es-VE"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="DD/MM/AAAA"
+            maxLength={10}
             value={date}
             onChange={(event) => {
-              setDate(event.target.value)
+              const raw = event.target.value.replace(/[^\d]/g, '').slice(0, 8)
+              let next = raw
+              if (raw.length > 4) {
+                next = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`
+              } else if (raw.length > 2) {
+                next = `${raw.slice(0, 2)}/${raw.slice(2)}`
+              }
+              setDate(next)
               setFormError('')
             }}
           />

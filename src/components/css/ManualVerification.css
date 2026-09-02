@@ -57,7 +57,7 @@
 
   text-align: left;
 
-  overflow: hidden;
+  overflow: visible;
 }
 
 
@@ -245,10 +245,11 @@
 .bank-select-menu {
   position: absolute;
 
-  top: calc(100% + 8px);
+  top: auto;
+  bottom: calc(100% + 8px);
   left: 0;
 
-  z-index: 50;
+  z-index: 400;
 
   width: 100%;
 
@@ -484,5 +485,24 @@
   .manual-form {
     width: 100%;
     gap: 16px;
+  }
+
+  .bank-select-menu {
+    position: fixed;
+
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    top: auto;
+
+    width: auto;
+
+    z-index: 5000;
+
+    max-height: 48vh;
+  }
+
+  .bank-options {
+    max-height: 32vh;
   }
 }
