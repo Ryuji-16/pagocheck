@@ -19,14 +19,16 @@ function UploadZone() {
 
   useEffect(() => {
     const formOpen =
-      verificationMethod === 'image' || verificationMethod === 'manual'
+      verificationMethod === 'image' ||
+      verificationMethod === 'manual' ||
+      Boolean(verificationResult)
 
     document.body.classList.toggle('form-open', formOpen)
 
     return () => {
       document.body.classList.remove('form-open')
     }
-  }, [verificationMethod])
+  }, [verificationMethod, verificationResult])
 
   function handleFile(selectedFile) {
     if (selectedFile && selectedFile.type.startsWith('image/')) {
