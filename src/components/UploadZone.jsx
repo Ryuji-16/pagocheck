@@ -245,7 +245,7 @@ function UploadZone() {
       )}
 
       {/* MODAL — COMPROBANTE */}
-      {verificationMethod === 'image' && (
+      {verificationMethod === 'image' && !verificationResult && !isVerifying && (
         <div className="modal-overlay">
           <div className="modal">
 
@@ -376,7 +376,7 @@ function UploadZone() {
       )}
 
       {/* MODAL — DATOS MANUALES */}
-      {verificationMethod === 'manual' && (
+      {verificationMethod === 'manual' && !verificationResult && !isVerifying && (
         <div className="modal-overlay">
           <div className="modal manual-modal">
 
