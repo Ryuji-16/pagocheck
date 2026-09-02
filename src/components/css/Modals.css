@@ -14,10 +14,10 @@
   z-index: 200;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 
-  padding: 24px;
+  padding: 88px 24px 24px;
 
   background: transparent;
 
@@ -192,7 +192,7 @@
   .modal-overlay {
     align-items: flex-start;
 
-    padding: 12px 12px 96px;
+    padding: 80px 12px 96px;
 
     overflow-y: auto;
   }

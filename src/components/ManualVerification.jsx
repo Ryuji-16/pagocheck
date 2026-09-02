@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BANKS, formatBankLabel } from '../services/banks'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 
@@ -39,24 +40,10 @@ function ManualVerification({
   const [bankSearch, setBankSearch] = useState('')
   const bankSelectRef = useRef(null)
   const [highlightedBankIndex, setHighlightedBankIndex] = useState(0)
-  const banks = [
-    'Banesco',
-    'Banco de Venezuela',
-    'Mercantil',
-    'BBVA Provincial',
-    'Banco Nacional de Crédito',
-    'Bancamiga',
-    'Banco del Tesoro',
-    'Banco Exterior',
-    'Banplus',
-    'Banco Activo',
-    'Banco Caroní',
-    'Banco Plaza',
-    'Otro'
-  ]
-  const filteredBanks = banks.filter((bankName) =>
-    bankName.toLowerCase().includes(bankSearch.toLowerCase())
-)
+  const filteredBanks = BANKS.filter((item) => {
+    const label = formatBankLabel(item).toLowerCase()
+    return label.includes(bankSearch.toLowerCase())
+  })
 
   function handleSubmit() {
   if (isVerifying) return
@@ -238,14 +225,11 @@ useEffect(() => {
 
     if (filteredBanks.length === 0) return
 
-    const selectedBank =
-      filteredBanks[highlightedBankIndex]
-
-    setBank(selectedBank)
-setBankSearch('')
-setIsBankOpen(false)
-setHighlightedBankIndex(0)
-setFormError('')
+    setBank(formatBankLabel(filteredBanks[highlightedBankIndex]))
+    setBankSearch('')
+    setIsBankOpen(false)
+    setHighlightedBankIndex(0)
+    setFormError('')
   }
 }}
 >
@@ -263,7 +247,9 @@ setFormError('')
       if (!isBankOpen) {
         setIsBankOpen(true)
 
-        const currentIndex = filteredBanks.indexOf(bank)
+        const currentIndex = filteredBanks.findIndex(
+          (item) => formatBankLabel(item) === bank
+        )
 
         setHighlightedBankIndex(
           currentIndex >= 0 ? currentIndex : 0
@@ -273,9 +259,7 @@ setFormError('')
   }}
 >
   <span>
-    {isBankOpen && filteredBanks.length > 0
-      ? filteredBanks[highlightedBankIndex]
-      : bank || 'Selecciona un banco'}
+    {bank || 'Selecciona un banco'}
   </span>
 
   <span className="bank-select-arrow">
@@ -291,7 +275,7 @@ setFormError('')
         <input
           type="text"
           className="bank-search"
-          placeholder="Buscar banco..."
+          placeholder="Buscar banco o código..."
           value={bankSearch}
           onChange={(event) =>
             setBankSearch(event.target.value)
@@ -300,9 +284,9 @@ setFormError('')
 
         <div className="bank-options">
           {filteredBanks.length > 0 ? (
-            filteredBanks.map((bankName, index) => (
+            filteredBanks.map((item, index) => (
   <button
-    key={bankName}
+    key={item.code}
     type="button"
     className={
       index === highlightedBankIndex
@@ -310,14 +294,14 @@ setFormError('')
         : 'bank-option'
     }
     onClick={() => {
-      setBank(bankName)
-setBankSearch('')
-setIsBankOpen(false)
-setHighlightedBankIndex(0)
-setFormError('')
+      setBank(formatBankLabel(item))
+      setBankSearch('')
+      setIsBankOpen(false)
+      setHighlightedBankIndex(0)
+      setFormError('')
     }}
   >
-    {bankName}
+    {formatBankLabel(item)}
   </button>
 ))
           ) : (
