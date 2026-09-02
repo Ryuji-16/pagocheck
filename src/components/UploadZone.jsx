@@ -3,6 +3,7 @@ import VerificationModal from './VerificationModal'
 import VerificationMethod from './VerificationMethod'
 import ManualVerification from './ManualVerification'
 import { verifyPayment } from "../services/verificationService";
+import { saveMovement } from '../services/historyService'
 import { extractPaymentData } from "../services/ocrService";
 import './css/UploadZone.css'
 import './css/Modals.css'
@@ -87,7 +88,14 @@ function UploadZone() {
 
   try {
     const result = await verifyPayment(data)
-
+    saveMovement({
+      type: 'validacion',
+      status: result.status,
+      amount: result.amount || '',
+      reference: result.reference || data.reference || '',
+      phone: result.phone || data.phone || '',
+      bank: result.bank || data.bank || ''
+    })
     setVerificationResult(result)
   } catch (error) {
     console.error('Error al verificar el pago:', error)
@@ -212,6 +220,14 @@ function UploadZone() {
       }
 
       const result = await verifyPayment(extractedData)
+      saveMovement({
+        type: 'validacion',
+        status: result.status,
+        amount: result.amount || '',
+        reference: result.reference || extractedData.reference || '',
+        phone: result.phone || extractedData.phone || '',
+        bank: result.bank || extractedData.bank || ''
+      })
       setVerificationResult(result)
     } catch (error) {
       console.error('Error al procesar el comprobante:', error)

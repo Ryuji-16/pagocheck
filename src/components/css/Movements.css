@@ -1,0 +1,54 @@
+.movements-screen {
+  text-align: left;
+}
+
+.movements-screen h1 {
+  margin: 0 0 8px;
+}
+
+.movements-screen > p {
+  margin: 0 0 20px;
+}
+
+.movements-empty {
+  color: var(--text-secondary);
+}
+
+.movements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.movements-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #101618;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.movements-item div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.movements-item span,
+.movements-item p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.movements-item.confirmed {
+  border-color: rgba(56, 193, 114, 0.35);
+}
+
+.movements-item.not-found,
+.movements-item.error {
+  border-color: rgba(201, 74, 74, 0.35);
+}

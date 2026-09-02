@@ -1,6 +1,6 @@
 import './css/Menu.css'
 
-function Menu({ username, label, onOpenVerify, onOpenVuelto, onOpenSettings, onLogout }) {
+function Menu({ username, label, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
   return (
     <section className="menu-screen">
       <h1>Menú</h1>
@@ -17,6 +17,12 @@ function Menu({ username, label, onOpenVerify, onOpenVuelto, onOpenSettings, onL
           <span className="menu-icon">⇄</span>
           <strong>Dar vuelto</strong>
           <span>Envía vuelto por pago móvil. Simulación por ahora.</span>
+        </button>
+
+        <button type="button" className="menu-card" onClick={onOpenMovements}>
+          <span className="menu-icon">☰</span>
+          <strong>Movimientos</strong>
+          <span>Revisa validaciones y vueltos de esta caja.</span>
         </button>
       </div>
 

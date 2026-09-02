@@ -5,6 +5,7 @@ import Menu from './components/Menu'
 import Vuelto from './components/Vuelto'
 import Settings from './components/Settings'
 import UploadZone from './components/UploadZone'
+import Movements from './components/Movements'
 import { getSession, logout } from './services/authService'
 import './App.css'
 import './components/css/Modals.css'
@@ -47,6 +48,7 @@ function App() {
             label={session.label}
             onOpenVerify={() => setScreen('verify')}
             onOpenVuelto={() => setScreen('vuelto')}
+            onOpenMovements={() => setScreen('movements')}
             onOpenSettings={() => setScreen('settings')}
             onLogout={handleLogout}
           />
@@ -78,6 +80,10 @@ function App() {
 
         {screen === 'vuelto' && (
           <Vuelto onBack={goMenu} />
+        )}
+
+        {screen === 'movements' && session && (
+          <Movements session={session} onBack={goMenu} />
         )}
 
         {screen === 'settings' && session && (

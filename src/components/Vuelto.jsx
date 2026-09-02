@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import BankSelect from './BankSelect'
 import { fetchBcvUsdRate } from '../services/rateService'
+import { saveMovement } from '../services/historyService'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 import './css/Vuelto.css'
@@ -113,6 +114,15 @@ function Vuelto({ onBack }) {
       setFormError('Ingresa la tasa USD a Bs.')
       return
     }
+
+    saveMovement({
+      type: 'vuelto',
+      status: 'simulado',
+      amount: `Bs. ${formatBs(amountValue)}`,
+      phone: phone.trim(),
+      bank,
+      cedula: `${idType}-${cedula.trim()}`
+    })
 
     setMessage(
       `Simulación: se enviaría Bs. ${formatBs(amountValue)} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}. Aquí irá la API de Banesco.`
