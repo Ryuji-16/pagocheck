@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { listMovements } from '../services/historyService'
 import './css/Movements.css'
 
@@ -23,7 +24,17 @@ function formatWhen(value) {
 }
 
 function Movements({ session, onBack }) {
-  const items = listMovements(session)
+  const [items, setItems] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    listMovements(session).then((rows) => {
+      if (!cancelled) setItems(rows)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [session])
 
   return (
     <section className="movements-screen">
@@ -34,7 +45,7 @@ function Movements({ session, onBack }) {
       <h1>Movimientos</h1>
       <p>
         {session.role === 'admin'
-          ? 'Admin: ves las cajas de este dispositivo.'
+          ? 'Admin: ves las cajas conectadas a la misma base.'
           : `Solo ves lo hecho por ${session.label || session.username}.`}
       </p>
 

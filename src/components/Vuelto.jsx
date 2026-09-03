@@ -84,7 +84,7 @@ function Vuelto({ onBack }) {
 
   const amountBs = mode === 'usd' ? convertedBs : ves
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
     setMessage('')
@@ -115,7 +115,7 @@ function Vuelto({ onBack }) {
       return
     }
 
-    saveMovement({
+    await saveMovement({
       type: 'vuelto',
       status: 'simulado',
       amount: `Bs. ${formatBs(amountValue)}`,

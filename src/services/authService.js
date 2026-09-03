@@ -1,3 +1,5 @@
+import { isRemoteDbEnabled, supabase } from './supabaseClient'
+
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
 
@@ -7,6 +9,14 @@ const DEFAULT_USERS = {
   caja2: { password: 'caja2', role: 'caja', label: 'Caja 2' },
   caja3: { password: 'caja3', role: 'caja', label: 'Caja 3' },
   admin: { password: 'admin123', role: 'admin', label: 'Admin de tienda' }
+}
+
+async function hashPassword(password) {
+  const data = new TextEncoder().encode(`pagocheck:${password}`)
+  const buffer = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 function toUserRecord(value, fallbackRole = 'caja') {
@@ -25,7 +35,7 @@ function toUserRecord(value, fallbackRole = 'caja') {
   }
 }
 
-function readUsers() {
+function readLocalUsers() {
   let stored = {}
 
   try {
@@ -47,8 +57,12 @@ function readUsers() {
   return users
 }
 
-function writeUsers(users) {
+function writeLocalUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users))
+}
+
+export function isRemoteAuthEnabled() {
+  return isRemoteDbEnabled()
 }
 
 export function getDemoAccounts() {
@@ -58,13 +72,6 @@ export function getDemoAccounts() {
     role: meta.role,
     label: meta.label
   }))
-}
-
-export function getDemoCredentials() {
-  return {
-    username: 'demo',
-    password: DEFAULT_USERS.demo.password
-  }
 }
 
 export function getSession() {
@@ -77,15 +84,44 @@ export function getSession() {
   }
 }
 
-export function login(username, password) {
+function writeSession(session) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+}
+
+export async function login(username, password) {
   const name = String(username || '').trim()
   const pass = String(password || '')
-  const users = readUsers()
 
   if (!name || !pass) {
     return { ok: false, message: 'Escribe usuario y clave.' }
   }
 
+  if (isRemoteDbEnabled()) {
+    const passwordHash = await hashPassword(pass)
+    const { data, error } = await supabase
+      .from('app_users')
+      .select('username, role, label, password_hash')
+      .eq('username', name)
+      .maybeSingle()
+
+    if (error) {
+      return { ok: false, message: 'No se pudo conectar a la base.' }
+    }
+
+    if (!data || data.password_hash !== passwordHash) {
+      return { ok: false, message: 'Usuario o clave incorrectos.' }
+    }
+
+    const session = {
+      username: data.username,
+      role: data.role,
+      label: data.label || data.username
+    }
+    writeSession(session)
+    return { ok: true, session }
+  }
+
+  const users = readLocalUsers()
   const user = users[name]
 
   if (!user || user.password !== pass) {
@@ -97,8 +133,7 @@ export function login(username, password) {
     role: user.role,
     label: user.label || name
   }
-
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  writeSession(session)
   return { ok: true, session }
 }
 
@@ -106,22 +141,50 @@ export function logout() {
   localStorage.removeItem(SESSION_KEY)
 }
 
-export function changePassword(username, currentPassword, nextPassword) {
-  const users = readUsers()
+export async function changePassword(username, currentPassword, nextPassword) {
+  if (String(nextPassword || '').length < 6) {
+    return { ok: false, message: 'La nueva clave debe tener al menos 6 caracteres.' }
+  }
+
+  if (isRemoteDbEnabled()) {
+    const currentHash = await hashPassword(currentPassword)
+    const { data, error } = await supabase
+      .from('app_users')
+      .select('username, password_hash, role, label')
+      .eq('username', username)
+      .maybeSingle()
+
+    if (error) {
+      return { ok: false, message: 'No se pudo conectar a la base.' }
+    }
+
+    if (!data || data.password_hash !== currentHash) {
+      return { ok: false, message: 'La clave actual no es correcta.' }
+    }
+
+    const { error: updateError } = await supabase
+      .from('app_users')
+      .update({ password_hash: await hashPassword(nextPassword) })
+      .eq('username', username)
+
+    if (updateError) {
+      return { ok: false, message: 'No se pudo guardar la clave.' }
+    }
+
+    return { ok: true }
+  }
+
+  const users = readLocalUsers()
   const user = users[username]
 
   if (!user || user.password !== currentPassword) {
     return { ok: false, message: 'La clave actual no es correcta.' }
   }
 
-  if (String(nextPassword || '').length < 6) {
-    return { ok: false, message: 'La nueva clave debe tener al menos 6 caracteres.' }
-  }
-
   users[username] = {
     ...user,
     password: nextPassword
   }
-  writeUsers(users)
+  writeLocalUsers(users)
   return { ok: true }
 }

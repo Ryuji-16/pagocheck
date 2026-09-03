@@ -88,7 +88,7 @@ function UploadZone() {
 
   try {
     const result = await verifyPayment(data)
-    saveMovement({
+    await saveMovement({
       type: 'validacion',
       status: result.status,
       amount: result.amount || '',
@@ -220,7 +220,7 @@ function UploadZone() {
       }
 
       const result = await verifyPayment(extractedData)
-      saveMovement({
+      await saveMovement({
         type: 'validacion',
         status: result.status,
         amount: result.amount || '',

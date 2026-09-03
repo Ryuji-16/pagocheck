@@ -10,7 +10,7 @@ function Settings({ username, onBack }) {
   const [error, setError] = useState('')
   const [ok, setOk] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setError('')
     setOk('')
@@ -20,7 +20,7 @@ function Settings({ username, onBack }) {
       return
     }
 
-    const result = changePassword(username, currentPassword, nextPassword)
+    const result = await changePassword(username, currentPassword, nextPassword)
 
     if (!result.ok) {
       setError(result.message)
@@ -30,7 +30,7 @@ function Settings({ username, onBack }) {
     setCurrentPassword('')
     setNextPassword('')
     setConfirmPassword('')
-    setOk('Clave actualizada en este dispositivo.')
+    setOk('Clave actualizada.')
   }
 
   return (
@@ -42,7 +42,7 @@ function Settings({ username, onBack }) {
       <div className="app-panel">
         <h2>Cambiar clave</h2>
         <p className="panel-copy">
-          Usuario: {username}. La clave se guarda solo en este navegador.
+          Usuario: {username}. Si hay base remota, la clave vale en todas las cajas.
         </p>
 
         <form onSubmit={handleSubmit}>

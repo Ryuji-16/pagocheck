@@ -8,9 +8,9 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const result = login(username, password)
+    const result = await login(username, password)
 
     if (!result.ok) {
       setError(result.message)
@@ -25,8 +25,8 @@ function Login({ onLogin }) {
       <div className="app-panel">
         <h1>Iniciar sesión</h1>
         <p className="panel-copy">
-          Prototipo sin servidor. Estos usuarios están en el código para
-          que cualquiera con el link pueda probarlos.
+          Usuarios de prueba. Si la base está conectada, las tres cajas
+          comparten la misma cuenta.
         </p>
 
         <form onSubmit={handleSubmit}>
