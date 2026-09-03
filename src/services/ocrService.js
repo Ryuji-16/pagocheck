@@ -14,6 +14,38 @@ function digitsOnly(value) {
   return String(value || '').replace(/\D/g, '')
 }
 
+function formatPhone(value) {
+  const all = digitsOnly(value).replace(/^58/, '')
+  const local = all.startsWith('0') ? all : `0${all}`
+  if (local.length !== 11 || !local.startsWith('04')) return ''
+  return `${local.slice(0, 4)}-${local.slice(4)}`
+}
+
+const RECEIVER_LABEL =
+  /beneficiar|receptor|destino|comercio|tienda|recib|para\b|afiliad[oa] (?:del )?comercio/
+const PAYER_LABEL =
+  /pagador|origen|emisor|remitente|ordenante|cliente|desde\b|tel[eé]fono origen|n[uú]mero origen/
+
+function extractPayerPhone(text) {
+  const compact = text.replace(/\s+/g, ' ')
+  const phonePattern = /(?:\+?58)?0?4\d{2}[\s.-]?\d{3}[\s.-]?\d{4}/g
+  const payerPhones = []
+  let match
+
+  while ((match = phonePattern.exec(compact))) {
+    const formatted = formatPhone(match[0])
+    if (!formatted) continue
+
+    const start = Math.max(0, match.index - 48)
+    const context = compact.slice(start, match.index + match[0].length).toLowerCase()
+
+    if (RECEIVER_LABEL.test(context)) continue
+    if (PAYER_LABEL.test(context)) payerPhones.push(formatted)
+  }
+
+  return payerPhones[0] || ''
+}
+
 function parsePaymentText(text) {
   const raw = String(text || '')
   const compact = raw.replace(/\s+/g, ' ')
@@ -25,17 +57,7 @@ function parsePaymentText(text) {
     date = `${dateMatch[1]}/${dateMatch[2]}/${year}`
   }
 
-  const phoneMatch =
-    compact.match(/\b(0?4\d{2})[\s.-]*(\d{3})[\s.-]*(\d{4})\b/) ||
-    compact.match(/\b(58)?(4\d{2})(\d{7})\b/)
-  let phone = ''
-  if (phoneMatch) {
-    const all = digitsOnly(phoneMatch[0]).replace(/^58/, '')
-    const local = all.startsWith('0') ? all : `0${all}`
-    if (local.length === 11) {
-      phone = `${local.slice(0, 4)}-${local.slice(4)}`
-    }
-  }
+  const phone = extractPayerPhone(compact)
 
   const referenceMatch =
     compact.match(/(?:ref(?:erencia)?|nro|n[úu]mero|operaci[oó]n)[^\d]{0,12}(\d{6,12})/i) ||
