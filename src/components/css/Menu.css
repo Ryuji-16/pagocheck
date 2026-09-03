@@ -86,8 +86,16 @@
   color: #f3c1c1;
 }
 
+.menu-grid .menu-card:last-child {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 650px) {
   .menu-grid {
     grid-template-columns: 1fr;
+  }
+
+  .menu-grid .menu-card:last-child {
+    grid-column: auto;
   }
 }

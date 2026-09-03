@@ -1,6 +1,14 @@
 import { listMovements } from '../services/historyService'
 import './css/Movements.css'
 
+function statusLabel(status) {
+  if (status === 'confirmed') return 'Confirmado'
+  if (status === 'not-found') return 'No encontrado'
+  if (status === 'error') return 'Error'
+  if (status === 'simulado') return 'Simulado'
+  return status || ''
+}
+
 function formatWhen(value) {
   try {
     return new Date(value).toLocaleString('es-VE', {
@@ -43,7 +51,7 @@ function Movements({ session, onBack }) {
                 <span>{formatWhen(item.at)}</span>
               </div>
               <p>
-                {item.label} · {item.status}
+                {item.label} · {statusLabel(item.status)}
                 {item.amount ? ` · ${item.amount}` : ''}
               </p>
               <p>

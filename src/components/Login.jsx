@@ -66,9 +66,18 @@ function Login({ onLogin }) {
         <ul className="login-accounts">
           {accounts.map((account) => (
             <li key={account.username}>
-              <span>{account.label}</span>
-              <strong>{account.username}</strong>
-              <em>{account.password}</em>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername(account.username)
+                  setPassword(account.password)
+                  setError('')
+                }}
+              >
+                <span>{account.label}</span>
+                <strong>{account.username}</strong>
+                <em>{account.password}</em>
+              </button>
             </li>
           ))}
         </ul>
