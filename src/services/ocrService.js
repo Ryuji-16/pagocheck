@@ -48,7 +48,7 @@ function extractPayerPhone(text) {
 
 
 const BANK_ALIASES = {
-  '0102': ['0102', 'bdv', 'banco de venezuela', 'de venezuela'],
+  '0102': ['0102', 'pagomovilbdv', 'bdvapp'],
   '0104': ['0104', 'venezolano de credito', 'bvc'],
   '0105': ['0105', 'mercantil'],
   '0108': ['0108', 'provincial', 'bbva'],
@@ -72,26 +72,52 @@ const BANK_ALIASES = {
   '0191': ['0191', 'bnc', 'nacional de credito']
 }
 
-function detectBank(text) {
-  const lower = text.toLowerCase()
+const ISSUER_PHRASES = [
+  { code: '0102', phrases: ['pagomovilbdv', 'pago movil bdv', 'bdvapp', 'bdvenlinea'] },
+  { code: '0134', phrases: ['banescomovil', 'banesconline', 'pagomovil banesco'] },
+  { code: '0105', phrases: ['tpago', 'mercantil movil'] },
+  { code: '0108', phrases: ['dinero rapido'] },
+  { code: '0172', phrases: ['bancamiga suite', 'bancamiga'] },
+  { code: '0191', phrases: ['bnc app', 'bncenlinea'] }
+]
+
+function normalizeOcr(text) {
+  return String(text || '')
+    .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+}
 
+function findBankByAliases(haystack) {
   for (const bank of BANKS) {
     const aliases = BANK_ALIASES[bank.code] || [bank.code, bank.name.toLowerCase()]
-    if (aliases.some((alias) => lower.includes(alias))) {
-      return bank
-    }
+    if (aliases.some((alias) => haystack.includes(alias))) return bank
   }
-
-  const codeMatch = text.match(/\b(01\d{2})\b/)
-  if (codeMatch) {
-    return BANKS.find((item) => item.code === codeMatch[1]) || null
-  }
-
   return null
 }
 
+function detectBank(text) {
+  const lower = normalizeOcr(text)
+  const header = lower.slice(0, 280)
+  const withoutDestination = lower
+    .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
+    .replace(/ci\s*\/?\s*rif\s*beneficiar[\s\S]{0,48}/g, ' ')
+    .replace(/banco\s*(destino|receptor)?\s*:[\s\S]{0,48}/g, ' ')
+
+  const originCode = lower.match(/instrumento origen[^0-9]{0,12}(01\d{2})/)
+  if (originCode) {
+    const found = BANKS.find((item) => item.code === originCode[1])
+    if (found) return found
+  }
+
+  for (const item of ISSUER_PHRASES) {
+    if (item.phrases.some((phrase) => header.includes(phrase) || withoutDestination.includes(phrase))) {
+      return BANKS.find((bank) => bank.code === item.code) || null
+    }
+  }
+
+  return findBankByAliases(header) || findBankByAliases(withoutDestination)
+}
 function parsePaymentText(text) {
   const raw = String(text || '')
   const compact = raw.replace(/\s+/g, ' ')
