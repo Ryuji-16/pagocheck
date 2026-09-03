@@ -26,12 +26,13 @@ function isValidDisplayDate(value) {
   )
 }
 
-function ManualVerification({ onVerify, onBack, isVerifying }) {
-  const [date, setDate] = useState(formatToday)
-  const [reference, setReference] = useState('')
-  const [phone, setPhone] = useState('')
-  const [bank, setBank] = useState('')
+function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} }) {
+  const [date, setDate] = useState(initialValues.date || formatToday)
+  const [reference, setReference] = useState(initialValues.reference || '')
+  const [phone, setPhone] = useState(initialValues.phone || '')
+  const [bank, setBank] = useState(initialValues.bank || '')
   const [formError, setFormError] = useState('')
+  const fromOcr = Boolean(initialValues.source === 'ocr')
 
   function handleSubmit() {
     if (isVerifying) return
@@ -76,7 +77,9 @@ function ManualVerification({ onVerify, onBack, isVerifying }) {
         <div className="modal-icon">✏️</div>
         <h2 className="modal-title">Datos del pago</h2>
         <p className="modal-description">
-          Introduce los datos de la operación manualmente.
+          {fromOcr
+            ? 'Revisa lo que se leyó de la foto. Completa lo que falte y verifica.'
+            : 'Introduce los datos de la operación manualmente.'}
         </p>
       </div>
 

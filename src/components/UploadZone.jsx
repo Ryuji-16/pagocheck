@@ -185,14 +185,6 @@ function UploadZone() {
     setExtractError('')
   }
 
-  const fieldLabels = {
-    reference: 'referencia',
-    date: 'fecha',
-    phone: 'teléfono',
-    bank: 'banco',
-    amount: 'monto'
-  }
-
   async function handleAnalyzeReceipt() {
     try {
       setIsVerifying(true)
@@ -200,35 +192,8 @@ function UploadZone() {
       setExtractError('')
 
       const extractedData = await extractPaymentData(file)
-      setOcrData(extractedData)
-
-      const requiredFields = ['reference', 'date', 'bank']
-      const missingFields = requiredFields.filter((field) => {
-        const value = extractedData[field]
-        return !value || value.toString().trim() === ''
-      })
-
-      if (missingFields.length > 0) {
-        const readable = missingFields
-          .map((field) => fieldLabels[field] || field)
-          .join(', ')
-
-        setExtractError(
-          `No se pudieron leer estos datos del comprobante: ${readable}. Prueba con otra captura o usa datos manuales.`
-        )
-        return
-      }
-
-      const result = await verifyPayment(extractedData)
-      await saveMovement({
-        type: 'validacion',
-        status: result.status,
-        amount: result.amount || '',
-        reference: result.reference || extractedData.reference || '',
-        phone: result.phone || extractedData.phone || '',
-        bank: result.bank || extractedData.bank || ''
-      })
-      setVerificationResult(result)
+      setOcrData({ ...extractedData, source: 'ocr' })
+      setVerificationMethod('manual')
     } catch (error) {
       console.error('Error al procesar el comprobante:', error)
       setVerificationResult({
@@ -412,10 +377,10 @@ function UploadZone() {
             <ManualVerification
               onBack={handleBackToMethods}
               onVerify={(data) => {
-                console.log('Datos manuales:', data)
                 handleVerify(data)
               }}
               isVerifying={isVerifying}
+              initialValues={ocrData || {}}
             />
 
           </div>
@@ -442,7 +407,7 @@ function UploadZone() {
             <div className="loading-spinner"></div>
 
             <p>
-              Verificando pago...
+              Procesando...
             </p>
 
           </div>
