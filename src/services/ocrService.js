@@ -21,14 +21,21 @@ function formatPhone(value) {
   return `${local.slice(0, 4)}-${local.slice(4)}`
 }
 
+function normalizeOcr(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 const RECEIVER_LABEL =
-  /beneficiar|receptor|destino|comercio|tienda|recib|para\b|afiliad[oa] (?:del )?comercio/
+  /beneficiar|receptor|destino|comercio|tienda|recib|celular de destino|telf beneficiario/
 const PAYER_LABEL =
-  /pagador|origen|emisor|remitente|ordenante|cliente|desde\b|tel[eé]fono origen|n[uú]mero origen/
+  /pagador|emisor|remitente|ordenante|celular de origen|n[uú]mero celular de origen|cuenta\/tel[eé]fono|telefono origen|n[uú]mero origen|banco origen.{0,40}/
 
 function extractPayerPhone(text) {
   const compact = text.replace(/\s+/g, ' ')
-  const phonePattern = /(?:\+?58)?0?4\d{2}[\s.-]?\d{3}[\s.-]?\d{4}/g
+  const phonePattern = /(?:\+?58)?\(?0?4\d{2}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/g
   const payerPhones = []
   let match
 
@@ -36,7 +43,7 @@ function extractPayerPhone(text) {
     const formatted = formatPhone(match[0])
     if (!formatted) continue
 
-    const start = Math.max(0, match.index - 48)
+    const start = Math.max(0, match.index - 56)
     const context = compact.slice(start, match.index + match[0].length).toLowerCase()
 
     if (RECEIVER_LABEL.test(context)) continue
@@ -46,11 +53,10 @@ function extractPayerPhone(text) {
   return payerPhones[0] || ''
 }
 
-
 const BANK_ALIASES = {
-  '0102': ['0102', 'pagomovilbdv', 'bdvapp'],
+  '0102': ['0102', 'pagomovilbdv', 'pagomevilbdv', 'bdvapp', 'banco de venezuela'],
   '0104': ['0104', 'venezolano de credito', 'bvc'],
-  '0105': ['0105', 'mercantil'],
+  '0105': ['0105', 'mercantil', 'tpago'],
   '0108': ['0108', 'provincial', 'bbva'],
   '0114': ['0114', 'bancaribe'],
   '0115': ['0115', 'exterior'],
@@ -72,22 +78,6 @@ const BANK_ALIASES = {
   '0191': ['0191', 'bnc', 'nacional de credito']
 }
 
-const ISSUER_PHRASES = [
-  { code: '0102', phrases: ['pagomovilbdv', 'pago movil bdv', 'bdvapp', 'bdvenlinea'] },
-  { code: '0134', phrases: ['banescomovil', 'banesconline', 'pagomovil banesco'] },
-  { code: '0105', phrases: ['tpago', 'mercantil movil'] },
-  { code: '0108', phrases: ['dinero rapido'] },
-  { code: '0172', phrases: ['bancamiga suite', 'bancamiga'] },
-  { code: '0191', phrases: ['bnc app', 'bncenlinea'] }
-]
-
-function normalizeOcr(text) {
-  return String(text || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
-
 function findBankByAliases(haystack) {
   for (const bank of BANKS) {
     const aliases = BANK_ALIASES[bank.code] || [bank.code, bank.name.toLowerCase()]
@@ -98,57 +88,114 @@ function findBankByAliases(haystack) {
 
 function detectBank(text) {
   const lower = normalizeOcr(text)
-  const header = lower.slice(0, 280)
-  const withoutDestination = lower
-    .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
-    .replace(/ci\s*\/?\s*rif\s*beneficiar[\s\S]{0,48}/g, ' ')
-    .replace(/banco\s*(destino|receptor)?\s*:[\s\S]{0,48}/g, ' ')
 
-  const originCode = lower.match(/instrumento origen[^0-9]{0,12}(01\d{2})/)
+  const emisor = lower.match(
+    /banco\s*(emisor|origen)\s*[:\-]?\s*([a-z0-9 .]{3,40})/
+  )
+  if (emisor) {
+    const found = findBankByAliases(emisor[2])
+    if (found) return found
+  }
+
+  const originCode = lower.match(
+    /(?:instrumento\s+origen|origen)\s*[:\-]?\s*(01\d{2})/
+  )
   if (originCode) {
     const found = BANKS.find((item) => item.code === originCode[1])
     if (found) return found
   }
 
-  for (const item of ISSUER_PHRASES) {
-    if (item.phrases.some((phrase) => header.includes(phrase) || withoutDestination.includes(phrase))) {
-      return BANKS.find((bank) => bank.code === item.code) || null
-    }
+  if (/cta\.?\s*corriente\s*bnc|\bbnc\b/.test(lower.slice(0, 400))) {
+    return BANKS.find((item) => item.code === '0191') || null
   }
+
+  if (/tpago|mercantil/.test(lower.slice(0, 500))) {
+    return BANKS.find((item) => item.code === '0105') || null
+  }
+
+  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv/.test(lower)) {
+    return BANKS.find((item) => item.code === '0102') || null
+  }
+
+  const header = lower.slice(0, 280)
+  const withoutDestination = lower
+    .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
+    .replace(/beneficiar[\s\S]{0,80}/g, ' ')
+    .replace(/banco\s*(destino|receptor)\s*[:\-][\s\S]{0,60}/g, ' ')
+    .replace(/\bbanco\s*:\s*[\s\S]{0,48}/g, ' ')
 
   return findBankByAliases(header) || findBankByAliases(withoutDestination)
 }
+
+const MONTHS = {
+  enero: '01',
+  febrero: '02',
+  marzo: '03',
+  abril: '04',
+  mayo: '05',
+  junio: '06',
+  julio: '07',
+  agosto: '08',
+  septiembre: '09',
+  octubre: '10',
+  noviembre: '11',
+  diciembre: '12'
+}
+
+function extractDate(compact) {
+  const numeric = compact.match(/\b(\d{2})[/-](\d{2})[/-](\d{2,4})\b/)
+  if (numeric) {
+    const year = numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3]
+    return `${numeric[1]}/${numeric[2]}/${year}`
+  }
+
+  const named = normalizeOcr(compact).match(
+    /\b(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?(\d{4})\b/
+  )
+  if (named) {
+    const day = named[1].padStart(2, '0')
+    return `${day}/${MONTHS[named[2]]}/${named[3]}`
+  }
+
+  return ''
+}
+
+function extractReference(compact) {
+  const labeled = compact.match(
+    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*de\s+referencia|referencia|operaci[oó]n)\s*[:\-]?\s*(\d{6,14})/i
+  )
+  if (labeled) return labeled[1]
+
+  return ''
+}
+
+function extractAmount(compact) {
+  const labeled = compact.match(
+    /(?:monto(?:\s+de\s+la\s+operaci[oó]n)?(?:\s*\(bs\.?\))?|bs\.?)\s*[:\-]?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{2})|[0-9]+,[0-9]{2})/i
+  )
+  if (labeled) return `Bs. ${labeled[1].replace(/'/g, '.')}`
+
+  const after = compact.match(
+    /([0-9]{1,3}(?:[.\s][0-9]{3})*,[0-9]{2})\s*bs/i
+  )
+  if (after) return `Bs. ${after[1]}`
+
+  return ''
+}
+
 function parsePaymentText(text) {
   const raw = String(text || '')
   const compact = raw.replace(/\s+/g, ' ')
 
-  const dateMatch = compact.match(/\b(\d{2})[/-](\d{2})[/-](\d{2,4})\b/)
-  let date = ''
-  if (dateMatch) {
-    const year = dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3]
-    date = `${dateMatch[1]}/${dateMatch[2]}/${year}`
-  }
-
-  const phone = extractPayerPhone(compact)
-
-  const referenceMatch =
-    compact.match(/(?:ref(?:erencia)?|nro|n[úu]mero|operaci[oó]n)[^\d]{0,12}(\d{6,12})/i) ||
-    compact.match(/\b(\d{8,12})\b/)
-  const reference = referenceMatch ? referenceMatch[1] : ''
-
-  const amountMatch = compact.match(
-    /(?:bs\.?|ves)?\s*([0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{2})|[0-9]+,[0-9]{2})/i
-  )
-  const amount = amountMatch ? `Bs. ${amountMatch[1]}` : ''
-
-  const bankItem = detectBank(compact)
-
   return {
-    reference,
-    date,
-    bank: bankItem ? formatBankLabel(bankItem) : '',
-    amount,
-    phone,
+    reference: extractReference(compact),
+    date: extractDate(compact),
+    bank: (() => {
+      const item = detectBank(compact)
+      return item ? formatBankLabel(item) : ''
+    })(),
+    amount: extractAmount(compact),
+    phone: extractPayerPhone(compact),
     rawText: raw.trim()
   }
 }
