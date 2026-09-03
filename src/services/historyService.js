@@ -1,5 +1,5 @@
 import { getSession } from './authService'
-import { isRemoteDbEnabled, supabase } from './supabaseClient'
+import { isRemoteDbEnabled, remoteRequest } from './supabaseClient'
 
 const HISTORY_KEY = 'pagocheck-movements'
 
@@ -45,18 +45,19 @@ export async function saveMovement(entry) {
   }
 
   if (isRemoteDbEnabled()) {
-    const { data, error } = await supabase
-      .from('movements')
-      .insert(item)
-      .select('id, created_at, username, label, type, status, amount, reference, phone, bank, cedula, note')
-      .single()
+    const { data, error } = await remoteRequest('movements', {
+      method: 'POST',
+      body: item,
+      prefer: 'return=representation'
+    })
 
     if (error) {
       console.error('No se pudo guardar el movimiento remoto', error)
       return null
     }
 
-    return toListItem(data)
+    const row = Array.isArray(data) ? data[0] : data
+    return row ? toListItem(row) : null
   }
 
   const localItem = {
@@ -73,17 +74,14 @@ export async function listMovements(session) {
   if (!session) return []
 
   if (isRemoteDbEnabled()) {
-    let query = supabase
-      .from('movements')
-      .select('id, created_at, username, label, type, status, amount, reference, phone, bank, cedula, note')
-      .order('created_at', { ascending: false })
-      .limit(200)
+    const filter =
+      session.role === 'admin'
+        ? ''
+        : `&username=eq.${encodeURIComponent(session.username)}`
+    const { data, error } = await remoteRequest(
+      `movements?select=id,created_at,username,label,type,status,amount,reference,phone,bank,cedula,note${filter}&order=created_at.desc&limit=200`
+    )
 
-    if (session.role !== 'admin') {
-      query = query.eq('username', session.username)
-    }
-
-    const { data, error } = await query
     if (error) {
       console.error('No se pudieron leer los movimientos', error)
       return []

@@ -1,4 +1,4 @@
-import { isRemoteDbEnabled, supabase } from './supabaseClient'
+import { isRemoteDbEnabled, remoteRequest } from './supabaseClient'
 
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
@@ -98,24 +98,25 @@ export async function login(username, password) {
 
   if (isRemoteDbEnabled()) {
     const passwordHash = await hashPassword(pass)
-    const { data, error } = await supabase
-      .from('app_users')
-      .select('username, role, label, password_hash')
-      .eq('username', name)
-      .maybeSingle()
+    const { data, error } = await remoteRequest(
+      `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,password_hash`
+    )
 
     if (error) {
-      return { ok: false, message: 'No se pudo conectar a la base.' }
+      return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
     }
 
-    if (!data || data.password_hash !== passwordHash) {
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row || row.password_hash !== passwordHash) {
       return { ok: false, message: 'Usuario o clave incorrectos.' }
     }
 
+    const dataUser = row
+
     const session = {
-      username: data.username,
-      role: data.role,
-      label: data.label || data.username
+      username: dataUser.username,
+      role: dataUser.role,
+      label: dataUser.label || dataUser.username
     }
     writeSession(session)
     return { ok: true, session }
@@ -148,27 +149,29 @@ export async function changePassword(username, currentPassword, nextPassword) {
 
   if (isRemoteDbEnabled()) {
     const currentHash = await hashPassword(currentPassword)
-    const { data, error } = await supabase
-      .from('app_users')
-      .select('username, password_hash, role, label')
-      .eq('username', username)
-      .maybeSingle()
+    const { data, error } = await remoteRequest(
+      `app_users?username=eq.${encodeURIComponent(username)}&select=username,password_hash,role,label`
+    )
 
     if (error) {
-      return { ok: false, message: 'No se pudo conectar a la base.' }
+      return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
     }
 
-    if (!data || data.password_hash !== currentHash) {
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row || row.password_hash !== currentHash) {
       return { ok: false, message: 'La clave actual no es correcta.' }
     }
 
-    const { error: updateError } = await supabase
-      .from('app_users')
-      .update({ password_hash: await hashPassword(nextPassword) })
-      .eq('username', username)
+    const { error: updateError } = await remoteRequest(
+      `app_users?username=eq.${encodeURIComponent(username)}`,
+      {
+        method: 'PATCH',
+        body: { password_hash: await hashPassword(nextPassword) }
+      }
+    )
 
     if (updateError) {
-      return { ok: false, message: 'No se pudo guardar la clave.' }
+      return { ok: false, message: `No se pudo guardar la clave: ${updateError.message}` }
     }
 
     return { ok: true }
