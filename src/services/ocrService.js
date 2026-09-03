@@ -46,6 +46,52 @@ function extractPayerPhone(text) {
   return payerPhones[0] || ''
 }
 
+
+const BANK_ALIASES = {
+  '0102': ['0102', 'bdv', 'banco de venezuela', 'de venezuela'],
+  '0104': ['0104', 'venezolano de credito', 'bvc'],
+  '0105': ['0105', 'mercantil'],
+  '0108': ['0108', 'provincial', 'bbva'],
+  '0114': ['0114', 'bancaribe'],
+  '0115': ['0115', 'exterior'],
+  '0128': ['0128', 'caroni'],
+  '0134': ['0134', 'banesco'],
+  '0137': ['0137', 'sofitasa'],
+  '0138': ['0138', 'plaza'],
+  '0151': ['0151', 'bfc', 'fondo comun'],
+  '0156': ['0156', '100% banco'],
+  '0157': ['0157', 'delsur'],
+  '0163': ['0163', 'tesoro'],
+  '0168': ['0168', 'bancrecer'],
+  '0171': ['0171', 'activo'],
+  '0172': ['0172', 'bancamiga'],
+  '0174': ['0174', 'banplus'],
+  '0175': ['0175', 'trabajadores'],
+  '0177': ['0177', 'banfanb', 'fanb'],
+  '0178': ['0178', 'n58'],
+  '0191': ['0191', 'bnc', 'nacional de credito']
+}
+
+function detectBank(text) {
+  const lower = text.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  for (const bank of BANKS) {
+    const aliases = BANK_ALIASES[bank.code] || [bank.code, bank.name.toLowerCase()]
+    if (aliases.some((alias) => lower.includes(alias))) {
+      return bank
+    }
+  }
+
+  const codeMatch = text.match(/\b(01\d{2})\b/)
+  if (codeMatch) {
+    return BANKS.find((item) => item.code === codeMatch[1]) || null
+  }
+
+  return null
+}
+
 function parsePaymentText(text) {
   const raw = String(text || '')
   const compact = raw.replace(/\s+/g, ' ')
@@ -69,17 +115,7 @@ function parsePaymentText(text) {
   )
   const amount = amountMatch ? `Bs. ${amountMatch[1]}` : ''
 
-  const lower = compact.toLowerCase()
-  const bankItem = BANKS.find((item) => {
-    const name = item.name.toLowerCase()
-    return (
-      compact.includes(item.code) ||
-      lower.includes(name) ||
-      (name.includes('banesco') && lower.includes('banesco')) ||
-      (name.includes('mercantil') && lower.includes('mercantil')) ||
-      (name.includes('provincial') && lower.includes('provincial'))
-    )
-  })
+  const bankItem = detectBank(compact)
 
   return {
     reference,
