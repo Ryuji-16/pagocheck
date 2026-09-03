@@ -17,48 +17,61 @@ async function getWorker() {
 }
 
 async function prepareImage(file) {
-  if (typeof createImageBitmap !== 'function') return file
+  try {
+    if (typeof createImageBitmap !== 'function') return file
 
-  const bitmap = await createImageBitmap(file)
-  const longest = Math.max(bitmap.width, bitmap.height)
-  let scale = 1
-  if (longest > 1800) scale = 1800 / longest
-  if (longest < 900) scale = 900 / longest
+    const bitmap = await createImageBitmap(file)
+    const longest = Math.max(bitmap.width, bitmap.height)
+    let scale = 1
+    if (longest > 1800) scale = 1800 / longest
+    if (longest < 900) scale = 900 / longest
 
-  const width = Math.max(1, Math.round(bitmap.width * scale))
-  const height = Math.max(1, Math.round(bitmap.height * scale))
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  ctx.filter = 'grayscale(1) contrast(1.4) brightness(1.05)'
-  ctx.drawImage(bitmap, 0, 0, width, height)
-  bitmap.close?.()
+    const width = Math.max(1, Math.round(bitmap.width * scale))
+    const height = Math.max(1, Math.round(bitmap.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return file
 
-  const sampleW = Math.min(width, 120)
-  const sampleH = Math.min(height, 120)
-  const sample = ctx.getImageData(0, 0, sampleW, sampleH)
-  let total = 0
-  const pixels = sample.data.length / 4
-  for (let i = 0; i < sample.data.length; i += 4) {
-    total += sample.data[i]
-  }
-  const average = total / pixels
+    ctx.drawImage(bitmap, 0, 0, width, height)
+    bitmap.close?.()
 
-  if (average < 95) {
-    const all = ctx.getImageData(0, 0, width, height)
-    for (let i = 0; i < all.data.length; i += 4) {
-      all.data[i] = 255 - all.data[i]
-      all.data[i + 1] = 255 - all.data[i + 1]
-      all.data[i + 2] = 255 - all.data[i + 2]
+    const sampleW = Math.min(160, width)
+    const sampleH = Math.min(160, height)
+    const sx = Math.max(0, Math.floor((width - sampleW) / 2))
+    const sy = Math.max(0, Math.floor((height - sampleH) / 2))
+    const sample = ctx.getImageData(sx, sy, sampleW, sampleH)
+    let total = 0
+    const pixels = sample.data.length / 4
+    for (let i = 0; i < sample.data.length; i += 4) {
+      total += (sample.data[i] + sample.data[i + 1] + sample.data[i + 2]) / 3
     }
-    ctx.putImageData(all, 0, 0)
-  }
+    const average = total / pixels
 
-  const blob = await new Promise((resolve) => {
-    canvas.toBlob((result) => resolve(result || file), 'image/png')
-  })
-  return blob
+    if (average < 70) {
+      const all = ctx.getImageData(0, 0, width, height)
+      for (let i = 0; i < all.data.length; i += 4) {
+        all.data[i] = 255 - all.data[i]
+        all.data[i + 1] = 255 - all.data[i + 1]
+        all.data[i + 2] = 255 - all.data[i + 2]
+      }
+      ctx.putImageData(all, 0, 0)
+    }
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob((result) => resolve(result || file), 'image/png')
+    })
+    return blob || file
+  } catch {
+    return file
+  }
+}
+
+function hasExtractedFields(data) {
+  return Boolean(
+    data?.reference || data?.date || data?.bank || data?.amount || data?.phone
+  )
 }
 
 function digitsOnly(value) {
@@ -256,8 +269,15 @@ export async function extractPaymentData(file) {
     throw new Error('No se recibió ningún comprobante.')
   }
 
-  const prepared = await prepareImage(file)
   const worker = await getWorker()
-  const { data } = await worker.recognize(prepared)
-  return parsePaymentText(data?.text || '')
+  const prepared = await prepareImage(file)
+  const first = await worker.recognize(prepared)
+  const parsed = parsePaymentText(first?.data?.text || '')
+
+  if (hasExtractedFields(parsed) || prepared === file) {
+    return parsed
+  }
+
+  const second = await worker.recognize(file)
+  return parsePaymentText(second?.data?.text || '')
 }
