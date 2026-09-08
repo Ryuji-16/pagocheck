@@ -51,11 +51,31 @@
 --radius-lg: 24px;
 
   /* =========================================
+     SUPERFICIES Y ACENTOS POS V3
+     ========================================= */
+
+  --surface-base: #070c0e;
+  --surface-raised: #0f1a1e;
+  --surface-container: #192124;
+  --surface-container-high: #232b2e;
+  --surface-container-lowest: #070f12;
+  --accent-emerald: #00d09c;
+  --accent-mint: #44edb7;
+  --accent-cyan: #6bd7da;
+
+  /* =========================================
      TIPOGRAFÍA
      ========================================= */
 
   --font-main:
-    Arial,
-    Helvetica,
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
     sans-serif;
+
+  --font-code:
+    'JetBrains Mono',
+    monospace;
 }

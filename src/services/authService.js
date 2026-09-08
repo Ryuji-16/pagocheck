@@ -4,11 +4,11 @@ const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
 
 const DEFAULT_USERS = {
-  demo: { password: 'pagocheck', role: 'caja', label: 'Prueba' },
-  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1' },
-  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2' },
-  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3' },
-  admin: { password: 'admin123', role: 'admin', label: 'Admin de tienda' }
+  demo: { password: 'pagocheck', role: 'caja', label: 'Prueba', subtitle: 'Cuenta demo general', icon: 'science' },
+  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
+  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
+  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
+  admin: { password: 'admin123', role: 'admin', label: 'Admin de tienda', subtitle: 'Acceso total / Reportes', icon: 'shield_person' }
 }
 
 async function hashPassword(password) {
@@ -70,7 +70,9 @@ export function getDemoAccounts() {
     username,
     password: meta.password,
     role: meta.role,
-    label: meta.label
+    label: meta.label,
+    subtitle: meta.subtitle || '',
+    icon: meta.icon || 'account_circle'
   }))
 }
 

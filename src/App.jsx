@@ -31,11 +31,13 @@ function App() {
 
   return (
     <>
-      <Header
-        loggedIn={Boolean(session)}
-        onGoMenu={session ? goMenu : undefined}
-        onLogout={session ? handleLogout : undefined}
-      />
+      {session && (
+        <Header
+          loggedIn={Boolean(session)}
+          onGoMenu={goMenu}
+          onLogout={handleLogout}
+        />
+      )}
 
       <main>
         {screen === 'login' && (
