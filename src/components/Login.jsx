@@ -11,9 +11,16 @@ function Login({ onLogin }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [highlightInput, setHighlightInput] = useState(false)
+  const [theme, setTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
   const toastTimerRef = useRef(null)
 
   const isRemote = isRemoteAuthEnabled()
+
+  function toggleTheme() {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(nextTheme)
+    localStorage.setItem('pagocheck-theme', nextTheme)
+  }
 
   useEffect(() => {
     return () => {
@@ -62,7 +69,7 @@ function Login({ onLogin }) {
   }
 
   return (
-    <section className="login-screen">
+    <section className={`login-screen theme-${theme}`} data-theme={theme}>
       {/* Luces atmosféricas decorativas */}
       <div className="login-aura-top" aria-hidden="true"></div>
       <div className="login-aura-bottom" aria-hidden="true"></div>
@@ -84,6 +91,22 @@ function Login({ onLogin }) {
           </div>
 
           <div className="login-status-group">
+            {/* Botón de alternancia de tema (Claro / Oscuro Mate) */}
+            <button
+              type="button"
+              className="login-theme-toggle"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro (Mate Anti-reflejo)'}
+              aria-label="Alternar tema de pantalla"
+            >
+              <span className="material-symbols-outlined">
+                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+              </span>
+              <span className="login-theme-text">
+                {theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+              </span>
+            </button>
+
             <div className="login-node-badge">
               <span className="login-ping-dot"></span>
               <span>Nodo Activo</span>
