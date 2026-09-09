@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { findMovementByReference } from '../services/historyService'
 import BankSelect from './BankSelect'
 import './css/ManualVerification.css'
 import './css/Modals.css'
@@ -26,6 +27,19 @@ function isValidDisplayDate(value) {
   )
 }
 
+function formatWhen(value) {
+  try {
+    return new Date(value).toLocaleString('es-VE', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return value || ''
+  }
+}
+
 function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} }) {
   const [date, setDate] = useState(initialValues.date || formatToday)
   const [reference, setReference] = useState(initialValues.reference || '')
@@ -34,7 +48,7 @@ function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} 
   const [formError, setFormError] = useState('')
   const fromOcr = Boolean(initialValues.source === 'ocr')
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (isVerifying) return
 
     setFormError('')
@@ -56,6 +70,16 @@ function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} 
 
     if (!bank) {
       setFormError('Selecciona el banco.')
+      return
+    }
+
+    // Comprobación anti-fraude: referencia duplicada
+    const duplicate = await findMovementByReference(reference.trim(), bank)
+    if (duplicate) {
+      const when = formatWhen(duplicate.at)
+      setFormError(
+        `⚠️ ¡Alerta de seguridad! Esta referencia ya fue registrada en ${duplicate.label || duplicate.username} el ${when}${duplicate.amount ? ` por ${duplicate.amount}` : ''}.`
+      )
       return
     }
 

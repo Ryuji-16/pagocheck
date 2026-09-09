@@ -1,9 +1,24 @@
+import { findMovementByReference } from './historyService'
+
 const DEMO_DELAY_MS = 2000
 
 function wait(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms)
   })
+}
+
+function formatWhen(value) {
+  try {
+    return new Date(value).toLocaleString('es-VE', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return value || ''
+  }
 }
 
 /*
@@ -76,6 +91,24 @@ function toPagoCheckResult(query, bankResponse) {
 }
 
 export async function verifyPayment(data = {}) {
+  const ref = String(data.reference || '').trim()
+
+  // 1. Verificación de seguridad anti-fraude: referencia duplicada
+  if (ref) {
+    const existing = await findMovementByReference(ref, data.bank)
+    if (existing) {
+      const when = formatWhen(existing.at)
+      return {
+        ...data,
+        status: 'error',
+        code: 'DUPLICATE',
+        message: `⚠️ Referencia duplicada: este pago ya fue registrado en ${existing.label || existing.username} el ${when}${existing.amount ? ` por ${existing.amount}` : ''}.`,
+        duplicateOf: existing
+      }
+    }
+  }
+
+  // 2. Consulta con el banco
   const bankResponse = await requestBankVerification(data)
   return toPagoCheckResult(data, bankResponse)
 }

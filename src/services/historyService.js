@@ -94,3 +94,54 @@ export async function listMovements(session) {
   if (session.role === 'admin') return all
   return all.filter((item) => item.username === session.username)
 }
+
+/**
+ * Busca si un número de referencia ya fue registrado en el sistema
+ * (localmente o en la base remota) para evitar pagos duplicados.
+ *
+ * @param {string} reference
+ * @param {string} [bank]
+ * @returns {Promise<Object|null>}
+ */
+export async function findMovementByReference(reference, bank = '') {
+  const ref = String(reference || '').trim()
+  if (!ref) return null
+
+  // 1. Revisar en almacenamiento local
+  const localItems = readAllLocal()
+  const localMatch = localItems.find((item) => {
+    if (!item.reference) return false
+    const matchRef = item.reference.trim() === ref
+    if (!matchRef) return false
+    if (item.status === 'not-found' || item.status === 'error') return false
+    if (bank && item.bank) {
+      return item.bank.trim() === bank.trim()
+    }
+    return true
+  })
+
+  if (localMatch) {
+    return localMatch
+  }
+
+  // 2. Revisar en base de datos remota si está activa
+  if (isRemoteDbEnabled()) {
+    try {
+      const filter = `&reference=eq.${encodeURIComponent(ref)}`
+      const { data, error } = await remoteRequest(
+        `movements?select=id,created_at,username,label,type,status,amount,reference,phone,bank,cedula,note${filter}&order=created_at.desc&limit=5`
+      )
+
+      if (!error && Array.isArray(data)) {
+        const found = data.find(
+          (row) => row.status !== 'not-found' && row.status !== 'error'
+        )
+        if (found) return toListItem(found)
+      }
+    } catch (err) {
+      console.error('Error al verificar duplicado remoto:', err)
+    }
+  }
+
+  return null
+}
