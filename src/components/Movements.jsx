@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { listMovements } from '../services/historyService'
 import { exportMovementsToExcel } from '../services/exportService'
 import MovementsFilter from './MovementsFilter'
+import ExportModal from './ExportModal'
 import './css/Movements.css'
 
 function statusLabel(status) {
@@ -35,7 +36,7 @@ const INITIAL_FILTERS = {
 function Movements({ session, onBack }) {
   const [items, setItems] = useState([])
   const [filters, setFilters] = useState(INITIAL_FILTERS)
-  const [exporting, setExporting] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
   const isAdmin = session?.role === 'admin'
@@ -108,30 +109,17 @@ function Movements({ session, onBack }) {
     setFilters(INITIAL_FILTERS)
   }
 
-  async function handleExport() {
+  async function handleCleanExport() {
     if (filteredItems.length === 0) {
       setFeedback({ type: 'error', text: 'No hay movimientos para exportar.' })
       return
     }
 
-    setExporting(true)
-    setFeedback(null)
-
-    try {
-      const result = await exportMovementsToExcel(filteredItems)
-      setFeedback({
-        type: 'success',
-        text: `Excel exportado con éxito (${result.sheetsCount} hoja${result.sheetsCount > 1 ? 's por caja' : ' de caja'}).`
-      })
-    } catch (err) {
-      console.error('Error al exportar movimientos:', err)
-      setFeedback({
-        type: 'error',
-        text: err.message || 'Ocurrió un error al generar el archivo Excel.'
-      })
-    } finally {
-      setExporting(false)
-    }
+    const result = await exportMovementsToExcel(filteredItems)
+    setFeedback({
+      type: 'success',
+      text: `Excel exportado con éxito (${result.sheetsCount} hoja${result.sheetsCount > 1 ? 's por caja' : ' de caja'}).`
+    })
   }
 
   return (
@@ -154,12 +142,11 @@ function Movements({ session, onBack }) {
           <button
             type="button"
             className="movements-export-button"
-            onClick={handleExport}
-            disabled={exporting || items.length === 0}
-            title="Exportar a Excel con una hoja separada por caja"
+            onClick={() => setShowExportModal(true)}
+            disabled={items.length === 0}
+            title="Exportar a Excel o integrar con arqueo diario"
           >
-            <span>📊</span>
-            {exporting ? 'Exportando...' : 'Exportar a Excel'}
+            <span>📊</span> Exportar a Excel
           </button>
         )}
       </div>
@@ -178,6 +165,15 @@ function Movements({ session, onBack }) {
           cajas={cajasOptions}
           filteredCount={filteredItems.length}
           totalCount={items.length}
+        />
+      )}
+
+      {isAdmin && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          movements={filteredItems}
+          onExportCleanReport={handleCleanExport}
         />
       )}
 
