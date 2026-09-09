@@ -110,7 +110,7 @@ function Movements({ session, onBack }) {
 
   async function handleExport() {
     if (filteredItems.length === 0) {
-      setFeedback({ type: 'error', text: 'No hay movimientos para exportar.' })
+      setFeedback({ type: 'error', text: 'No hay validaciones ni vueltos para exportar con los filtros seleccionados.' })
       return
     }
 
@@ -119,9 +119,25 @@ function Movements({ session, onBack }) {
 
     try {
       const result = await exportMovementsToExcel(filteredItems, { onlyToday: true })
+      const valids = result.validacionesCount ?? 0
+      const vueltos = result.vueltosCount ?? 0
+      const cajasCount = result.sheetsCount ?? 1
+      const totalRecords = result.totalRecords ?? (valids + vueltos)
+
+      let detail = ''
+      if (valids > 0 && vueltos > 0) {
+        detail = `${valids} validación${valids > 1 ? 'es' : ''} y ${vueltos} vuelto${vueltos > 1 ? 's' : ''}`
+      } else if (valids > 0) {
+        detail = `${valids} validación${valids > 1 ? 'es' : ''}`
+      } else if (vueltos > 0) {
+        detail = `${vueltos} vuelto${vueltos > 1 ? 's' : ''}`
+      } else {
+        detail = `${totalRecords} registro${totalRecords > 1 ? 's' : ''}`
+      }
+
       setFeedback({
         type: 'success',
-        text: `Excel exportado con éxito (${result.totalRecords} movimientos de hoy en ${result.sheetsCount} hoja${result.sheetsCount > 1 ? 's por caja' : ' de caja'}).`
+        text: `Excel descargado con éxito: ${detail} del día de hoy en ${cajasCount} caja${cajasCount > 1 ? 's' : ''}.`
       })
     } catch (err) {
       console.error('Error al exportar movimientos:', err)

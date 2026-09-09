@@ -1,4 +1,5 @@
 import writeXlsxFile from 'write-excel-file/browser'
+import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate'
 
 function sanitizeSheetName(rawName, usedNames) {
   let clean = String(rawName || 'Caja')
@@ -144,9 +145,11 @@ const COLUMNS = [
 
 function buildSheetData(cajaName, movements) {
   const rows = [HEADERS]
+  let cajaTotal = 0
 
   for (const item of movements) {
     const numAmount = parseAmount(item.amount)
+    cajaTotal += numAmount
 
     rows.push([
       { value: formatWhen(item.at), align: 'center' },
@@ -171,10 +174,19 @@ function buildSheetData(cajaName, movements) {
   // Fila vacía separadora
   rows.push([null, null, null, null, null, null, null, null, null])
 
+  const valids = movements.filter((m) => m.type === 'validacion').length
+  const vueltos = movements.filter((m) => m.type === 'vuelto').length
+  let totalLabel = `Total registros: ${movements.length}`
+  if (valids > 0 && vueltos > 0) {
+    totalLabel += ` (${valids} val, ${vueltos} vueltos)`
+  } else if (vueltos > 0) {
+    totalLabel += ` (${vueltos} vueltos)`
+  }
+
   // Fila de total con autosuma en columna D
   rows.push([
     {
-      value: `Total registros: ${movements.length}`,
+      value: totalLabel,
       fontWeight: 'bold',
       align: 'center'
     },
@@ -194,12 +206,12 @@ function buildSheetData(cajaName, movements) {
     null
   ])
 
-  return rows
+  return { rows, cajaTotal }
 }
 
 /**
- * Exporta los movimientos exclusivamente del DÍA agrupados por caja en hojas independientes.
- * Las hojas quedan ordenadas (Caja 1, Caja 2, Caja 3...) con texto centrado y autosuma en Monto.
+ * Exporta los movimientos (validaciones y vueltos) exclusivamente del DÍA agrupados por caja en hojas independientes.
+ * Las hojas quedan ordenadas (Caja 1, Caja 2, Caja 3...) con texto centrado y autosuma evaluada en Monto.
  *
  * @param {Array} movements - Lista de movimientos a exportar.
  * @param {Object} [options]
@@ -218,7 +230,7 @@ export async function exportMovementsToExcel(movements, options = {}) {
     : movements
 
   if (targetMovements.length === 0) {
-    throw new Error('No hay movimientos registrados el día de hoy para exportar.')
+    throw new Error('No hay validaciones ni vueltos registrados el día de hoy para exportar.')
   }
 
   // Agrupar movimientos por caja
@@ -236,48 +248,80 @@ export async function exportMovementsToExcel(movements, options = {}) {
 
   const usedNames = new Set()
   const sheets = []
+  const sheetTotals = []
 
   for (const cajaName of sortedCajaNames) {
     const groupItems = groups.get(cajaName)
     const sheetTitle = sanitizeSheetName(cajaName, usedNames)
+    const { rows, cajaTotal } = buildSheetData(cajaName, groupItems)
+
     sheets.push({
       sheet: sheetTitle,
       columns: COLUMNS,
-      data: buildSheetData(cajaName, groupItems)
+      data: rows
     })
+    sheetTotals.push(cajaTotal)
   }
 
   const now = new Date()
   const dateSuffix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const fileName = `${options.prefix || 'pagocheck_movimientos'}_${dateSuffix}.xlsx`
 
-  const writer = writeXlsxFile(sheets)
+  // Generar buffer inicial
+  const initialBlob = await writeXlsxFile(sheets).toBlob()
+  const arrayBuffer = await initialBlob.arrayBuffer()
+  const unzipped = unzipSync(new Uint8Array(arrayBuffer))
 
-  if (writer && typeof writer.toFile === 'function') {
-    await writer.toFile(fileName)
-  } else if (writer && typeof writer.toBlob === 'function') {
-    const blob = await writer.toBlob()
-    if (typeof window !== 'undefined' && window.URL && document.createElement) {
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      }, 100)
-    }
-  } else if (writer && typeof writer.then === 'function') {
-    await writer
+  // 1. Activar recalculación automática en Excel (calcPr fullCalcOnLoad="1")
+  if (unzipped['xl/workbook.xml']) {
+    let wb = strFromU8(unzipped['xl/workbook.xml'])
+    wb = wb.replace(/<calcPr\s*\/>|<calcPr[^>]*\/>/i, '<calcPr fullCalcOnLoad="1"/>')
+    unzipped['xl/workbook.xml'] = strToU8(wb)
   }
+
+  // 2. Corregir formato OpenXML de la fórmula (sin '=' al inicio) y pre-inyectar <v> con el total
+  // para que Excel muestre el resultado inmediatamente sin esperar recálculo manual
+  for (let i = 0; i < sheets.length; i++) {
+    const sheetFile = `xl/worksheets/sheet${i + 1}.xml`
+    if (unzipped[sheetFile]) {
+      let s = strFromU8(unzipped[sheetFile])
+      const totalVal = (sheetTotals[i] || 0).toFixed(2)
+      s = s.replace(/<f>=?([^<]+)<\/f>/g, (_, f) => `<f>${f}</f><v>${totalVal}</v>`)
+      unzipped[sheetFile] = strToU8(s)
+    }
+  }
+
+  const finalZip = zipSync(unzipped)
+  const finalBlob = new Blob([finalZip], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  })
+
+  // Descargar el archivo final optimizado en el navegador
+  if (typeof window !== 'undefined' && window.URL && document.createElement) {
+    const url = window.URL.createObjectURL(finalBlob)
+    const a = document.createElement('a')
+    a.style.display = 'none'
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    }, 100)
+  }
+
+  const validacionesCount = targetMovements.filter((m) => m.type === 'validacion').length
+  const vueltosCount = targetMovements.filter((m) => m.type === 'vuelto').length
+  const totalMonto = targetMovements.reduce((sum, m) => sum + parseAmount(m.amount), 0)
 
   return {
     ok: true,
     fileName,
     sheetsCount: sheets.length,
-    totalRecords: targetMovements.length
+    validacionesCount,
+    vueltosCount,
+    totalRecords: targetMovements.length,
+    totalMonto
   }
 }
