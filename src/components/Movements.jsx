@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { listMovements } from '../services/historyService'
+import { exportMovementsToExcel } from '../services/exportService'
+import MovementsFilter from './MovementsFilter'
 import './css/Movements.css'
 
 function statusLabel(status) {
@@ -23,8 +25,20 @@ function formatWhen(value) {
   }
 }
 
+const INITIAL_FILTERS = {
+  caja: '',
+  type: '',
+  status: '',
+  search: ''
+}
+
 function Movements({ session, onBack }) {
   const [items, setItems] = useState([])
+  const [filters, setFilters] = useState(INITIAL_FILTERS)
+  const [exporting, setExporting] = useState(false)
+  const [feedback, setFeedback] = useState(null)
+
+  const isAdmin = session?.role === 'admin'
 
   useEffect(() => {
     let cancelled = false
@@ -36,24 +50,144 @@ function Movements({ session, onBack }) {
     }
   }, [session])
 
+  const cajasOptions = useMemo(() => {
+    const map = new Map()
+    for (const item of items) {
+      const key = item.username || item.label
+      if (key && !map.has(key)) {
+        map.set(key, item.label || item.username)
+      }
+    }
+    return Array.from(map.entries()).map(([key, label]) => ({ key, label }))
+  }, [items])
+
+  const filteredItems = useMemo(() => {
+    if (!isAdmin) return items
+
+    return items.filter((item) => {
+      if (filters.caja) {
+        const itemKey = item.username || item.label
+        if (itemKey !== filters.caja) return false
+      }
+
+      if (filters.type && item.type !== filters.type) {
+        return false
+      }
+
+      if (filters.status && item.status !== filters.status) {
+        return false
+      }
+
+      if (filters.search) {
+        const query = filters.search.trim().toLowerCase()
+        const text = [
+          item.label,
+          item.username,
+          item.reference,
+          item.phone,
+          item.bank,
+          item.cedula,
+          item.note
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+
+        if (!text.includes(query)) return false
+      }
+
+      return true
+    })
+  }, [items, isAdmin, filters])
+
+  function handleFilterChange(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function handleResetFilters() {
+    setFilters(INITIAL_FILTERS)
+  }
+
+  async function handleExport() {
+    if (filteredItems.length === 0) {
+      setFeedback({ type: 'error', text: 'No hay movimientos para exportar.' })
+      return
+    }
+
+    setExporting(true)
+    setFeedback(null)
+
+    try {
+      const result = await exportMovementsToExcel(filteredItems)
+      setFeedback({
+        type: 'success',
+        text: `Excel exportado con éxito (${result.sheetsCount} hoja${result.sheetsCount > 1 ? 's por caja' : ' de caja'}).`
+      })
+    } catch (err) {
+      console.error('Error al exportar movimientos:', err)
+      setFeedback({
+        type: 'error',
+        text: err.message || 'Ocurrió un error al generar el archivo Excel.'
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <section className="movements-screen">
       <button type="button" className="modal-back-button" onClick={onBack}>
         ← Menú
       </button>
 
-      <h1>Movimientos</h1>
-      <p>
-        {session.role === 'admin'
-          ? 'Admin: ves las cajas conectadas a la misma base.'
-          : `Solo ves lo hecho por ${session.label || session.username}.`}
-      </p>
+      <div className="movements-header">
+        <div className="movements-header-text">
+          <h1>Movimientos</h1>
+          <p>
+            {isAdmin
+              ? 'Admin: ves las cajas conectadas a la misma base.'
+              : `Solo ves lo hecho por ${session.label || session.username}.`}
+          </p>
+        </div>
+
+        {isAdmin && (
+          <button
+            type="button"
+            className="movements-export-button"
+            onClick={handleExport}
+            disabled={exporting || items.length === 0}
+            title="Exportar a Excel con una hoja separada por caja"
+          >
+            <span>📊</span>
+            {exporting ? 'Exportando...' : 'Exportar a Excel'}
+          </button>
+        )}
+      </div>
+
+      {feedback && (
+        <div className={`movements-feedback ${feedback.type}`}>
+          {feedback.text}
+        </div>
+      )}
+
+      {isAdmin && (
+        <MovementsFilter
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+          cajas={cajasOptions}
+          filteredCount={filteredItems.length}
+          totalCount={items.length}
+        />
+      )}
 
       {items.length === 0 ? (
         <p className="movements-empty">Aún no hay movimientos en este navegador.</p>
+      ) : filteredItems.length === 0 ? (
+        <p className="movements-empty">No se encontraron movimientos con los filtros aplicados.</p>
       ) : (
         <ul className="movements-list">
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <li key={item.id} className={`movements-item ${item.status}`}>
               <div>
                 <strong>
