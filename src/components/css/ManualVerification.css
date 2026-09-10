@@ -167,6 +167,16 @@
   transition: var(--transition-theme);
 }
 
+.bank-select-menu.direction-down {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.bank-select-menu.direction-up {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
 
 /* =========================================================
    BUSCADOR

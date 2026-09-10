@@ -42,6 +42,7 @@ function Vuelto({ onBack }) {
   const [phone, setPhone] = useState('')
   const [idType, setIdType] = useState('V')
   const [cedula, setCedula] = useState('')
+  const [concept, setConcept] = useState('')
   const [mode, setMode] = useState('ves')
   const [rate, setRate] = useState(readRate)
   const [rateMeta, setRateMeta] = useState('')
@@ -121,11 +122,12 @@ function Vuelto({ onBack }) {
       amount: `Bs. ${formatBs(amountValue)}`,
       phone: phone.trim(),
       bank,
-      cedula: `${idType}-${cedula.trim()}`
+      cedula: `${idType}-${cedula.trim()}`,
+      note: concept.trim() || 'Vuelto pago móvil'
     })
 
     setMessage(
-      `Simulación: se enviaría Bs. ${formatBs(amountValue)} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}. Aquí irá la API de Banesco.`
+      `Simulación: se enviaría Bs. ${formatBs(amountValue)} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}${concept.trim() ? ` — Concepto: ${concept.trim()}` : ''}. Aquí irá la API de Banesco.`
     )
   }
 
@@ -145,7 +147,40 @@ function Vuelto({ onBack }) {
         </div>
 
         <form className="manual-form" onSubmit={handleSubmit}>
+          {/* 1. Documento y Número de documento */}
+          <div className="document-row">
+            <label className="document-type-field">
+              <span>Documento</span>
+              <select
+                value={idType}
+                onChange={(event) => setIdType(event.target.value)}
+              >
+                <option value="V">V</option>
+                <option value="E">E</option>
+                <option value="J">J</option>
+                <option value="G">G</option>
+              </select>
+            </label>
+
+            <label className="document-number-field">
+              <span>Número de documento</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Número de cédula"
+                value={cedula}
+                onChange={(event) => {
+                  setCedula(event.target.value.replace(/[^\d]/g, ''))
+                  setFormError('')
+                }}
+              />
+            </label>
+          </div>
+
+          {/* 2. Banco beneficiario (apertura hacia abajo) */}
           <BankSelect
+            label="Banco beneficiario"
+            direction="down"
             value={bank}
             onChange={(nextBank) => {
               setBank(nextBank)
@@ -153,8 +188,9 @@ function Vuelto({ onBack }) {
             }}
           />
 
+          {/* 3. Teléfono de beneficiario */}
           <label>
-            Teléfono
+            <span>Teléfono de beneficiario</span>
             <input
               type="tel"
               inputMode="numeric"
@@ -167,31 +203,7 @@ function Vuelto({ onBack }) {
             />
           </label>
 
-          <label>
-            Cédula
-            <div className="cedula-row">
-              <select
-                value={idType}
-                onChange={(event) => setIdType(event.target.value)}
-              >
-                <option value="V">V</option>
-                <option value="E">E</option>
-                <option value="J">J</option>
-                <option value="G">G</option>
-              </select>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Número de cédula"
-                value={cedula}
-                onChange={(event) => {
-                  setCedula(event.target.value.replace(/[^\d]/g, ''))
-                  setFormError('')
-                }}
-              />
-            </div>
-          </label>
-
+          {/* 4. Monto (Manual Bs o Desde USD con tasa BCV) */}
           <div className="amount-mode">
             <button
               type="button"
@@ -212,7 +224,7 @@ function Vuelto({ onBack }) {
           {mode === 'usd' && (
             <>
               <label>
-                Tasa BCV (Bs por 1 USD)
+                <span>Tasa BCV (Bs por 1 USD)</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -230,7 +242,7 @@ function Vuelto({ onBack }) {
               {rateMeta && <p className="rate-note">{rateMeta}</p>}
 
               <label>
-                Monto USD
+                <span>Monto USD</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -244,7 +256,7 @@ function Vuelto({ onBack }) {
               </label>
 
               <label>
-                Monto a enviar (Bs)
+                <span>Monto a enviar (Bs)</span>
                 <input type="text" readOnly value={convertedBs} placeholder="0,00" />
               </label>
             </>
@@ -252,7 +264,7 @@ function Vuelto({ onBack }) {
 
           {mode === 'ves' && (
             <label>
-              Monto Bs
+              <span>Monto en bolívares</span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -265,6 +277,20 @@ function Vuelto({ onBack }) {
               />
             </label>
           )}
+
+          {/* 5. Concepto */}
+          <label>
+            <span>Concepto</span>
+            <input
+              type="text"
+              placeholder="Concepto de la operación (ej: Vuelto compra)"
+              value={concept}
+              onChange={(event) => {
+                setConcept(event.target.value)
+                setFormError('')
+              }}
+            />
+          </label>
 
           {formError && <p className="form-error">{formError}</p>}
           {message && <p className="app-form-ok">{message}</p>}
