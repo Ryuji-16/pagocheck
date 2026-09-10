@@ -1,0 +1,96 @@
+/* =========================================================
+   PAGOCHECK — PAGINACIÓN DE MOVIMIENTOS
+   ========================================================= */
+
+.movements-pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 4px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+/* Selector de filas por página */
+.movements-page-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.movements-page-size select {
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 24px 4px 8px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: var(--transition-theme);
+}
+
+.movements-page-size select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.movements-page-size select:hover {
+  border-color: var(--primary);
+}
+
+/* Controles de página */
+.movements-page-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.page-nav-arrow,
+.page-nav-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.page-nav-arrow {
+  font-size: 16px;
+}
+
+.page-nav-arrow:hover:not(:disabled),
+.page-nav-number:hover:not(.active) {
+  background: var(--badge-bg);
+  color: var(--text-primary);
+  border-color: var(--badge-border);
+}
+
+.page-nav-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-nav-number.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  font-weight: 700;
+}

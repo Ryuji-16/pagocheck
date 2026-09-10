@@ -1,0 +1,298 @@
+/* =========================================================
+   PAGOCHECK — TABLA DE MOVIMIENTOS (ESTILO DASHBOARD)
+   ========================================================= */
+
+.movements-table-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 20px;
+  transition: var(--transition-theme);
+}
+
+.movements-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.movements-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ENCABEZADOS
+   ========================================================= */
+
+.movements-data-table thead {
+  background: rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--card-border);
+}
+
+html[data-theme='light'] .movements-data-table thead {
+  background: #f8fafc;
+}
+
+.movements-data-table th {
+  padding: 14px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.movements-data-table th.sortable {
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.movements-data-table th.sortable:hover {
+  color: var(--primary);
+}
+
+.movements-data-table th.sortable span {
+  margin-right: 4px;
+}
+
+.sort-icon {
+  font-size: 11px;
+  display: inline-block;
+}
+
+.sort-icon.inactive {
+  opacity: 0.35;
+}
+
+.sort-icon.active {
+  color: var(--primary);
+}
+
+/* =========================================================
+   FILAS Y CELDAS
+   ========================================================= */
+
+.movements-data-table tbody tr {
+  border-bottom: 1px solid var(--card-border);
+  transition: background-color 0.18s ease;
+}
+
+.movements-data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.movements-data-table tbody tr:hover {
+  background-color: var(--card-hover);
+}
+
+.movements-data-table td {
+  padding: 14px 18px;
+  vertical-align: middle;
+}
+
+/* Columna: TIPO */
+.type-badge-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.type-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.type-circle.val {
+  background: rgba(0, 229, 163, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(0, 229, 163, 0.35);
+}
+
+.type-circle.vuelto {
+  background: rgba(107, 215, 218, 0.15);
+  color: var(--secondary);
+  border: 1px solid rgba(107, 215, 218, 0.35);
+}
+
+.type-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Columna: CAJA / TERMINAL */
+.terminal-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  color: var(--badge-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Columna: BANCO / ENTIDAD */
+.bank-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bank-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bank-code {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Columna: TELÉFONO / DETALLE */
+.detail-text {
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+/* Columna: FECHA */
+.date-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-primary {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.date-relative {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Columna: MONTO */
+.amount-bold {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Columna: ESTADO */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-confirmed {
+  background: rgba(0, 229, 163, 0.12);
+  border: 1px solid rgba(0, 229, 163, 0.3);
+  color: var(--primary);
+}
+
+.status-confirmed .status-dot {
+  background: var(--primary);
+}
+
+.status-simulado {
+  background: rgba(107, 215, 218, 0.12);
+  border: 1px solid rgba(107, 215, 218, 0.3);
+  color: var(--secondary);
+}
+
+.status-simulado .status-dot {
+  background: var(--secondary);
+}
+
+.status-not-found {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.status-not-found .status-dot {
+  background: #f59e0b;
+}
+
+.status-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.status-error .status-dot {
+  background: #ef4444;
+}
+
+/* Columna: REFERENCIA (Sustituye a Acciones) */
+.reference-cell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.reference-cell-btn:hover {
+  background: var(--badge-bg);
+  border-color: var(--badge-border);
+  color: var(--text-primary);
+}
+
+.reference-cell-btn.copied {
+  background: rgba(0, 229, 163, 0.15);
+  border-color: rgba(0, 229, 163, 0.35);
+  color: var(--primary);
+}
+
+.ref-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.3px;
+}
+
+.ref-icon {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Estado vacío */
+.movements-table-empty {
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}

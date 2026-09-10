@@ -1,27 +1,64 @@
 /* =========================================================
-   PAGOCHECK — MOVIMIENTOS (DESIGN TOKENS)
+   PAGOCHECK — MOVIMIENTOS DASHBOARD (DESIGN TOKENS)
    ========================================================= */
 
 .movements-screen {
   text-align: left;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding-bottom: 32px;
 }
+
+/* =========================================================
+   BREADCRUMB / NAVEGACIÓN
+   ========================================================= */
+
+.movements-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.movements-breadcrumb .modal-back-button {
+  margin-bottom: 0;
+}
+
+.movements-breadcrumb-path {
+  color: var(--text-secondary);
+}
+
+.movements-breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* =========================================================
+   CABECERA PRINCIPAL Y ACCIONES
+   ========================================================= */
 
 .movements-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
 .movements-header-text h1 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
+  font-size: 30px;
+  font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.6px;
 }
 
 .movements-header-text p {
   margin: 0;
+  font-size: 14px;
   color: var(--text-secondary);
 }
 
@@ -29,7 +66,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 10px 20px;
   background: var(--primary);
   border: 1px solid var(--primary-hover);
   border-radius: var(--radius-sm);
@@ -38,21 +75,28 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 229, 163, 0.25);
   transition: var(--transition-theme);
 }
 
 .movements-export-button:hover:not(:disabled) {
   background: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 .movements-export-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
+
+/* =========================================================
+   MENSAJES DE FEEDBACK
+   ========================================================= */
 
 .movements-feedback {
   margin: 0 0 16px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   line-height: 1.4;
@@ -71,51 +115,33 @@
   color: var(--status-error-text);
 }
 
-.movements-empty {
-  color: var(--text-secondary);
-}
+/* =========================================================
+   PIE DE PÁGINA INFORMATIVO
+   ========================================================= */
 
-.movements-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.movements-footer-info {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.movements-item {
-  padding: 14px 18px;
-  border-radius: var(--radius-lg);
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-theme);
-}
-
-.movements-item div {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border);
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
 }
 
-.movements-item strong {
-  color: var(--text-primary);
+.movements-sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.movements-item span,
-.movements-item p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.movements-item.confirmed {
-  border-color: var(--status-confirmed-border);
-}
-
-.movements-item.not-found,
-.movements-item.error {
-  border-color: var(--status-error-border);
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
 }

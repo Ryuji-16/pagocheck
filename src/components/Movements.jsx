@@ -1,48 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listMovements } from '../services/historyService'
 import { exportMovementsToExcel } from '../services/exportService'
-import MovementsFilter from './MovementsFilter'
+import { isDateInPreset, parseAmount, parseDate } from '../utils/formatters'
+import MovementsTabs from './MovementsTabs'
+import MovementsToolbar from './MovementsToolbar'
+import MovementsTable from './MovementsTable'
+import MovementsPagination from './MovementsPagination'
 import './css/Movements.css'
-
-function statusLabel(status) {
-  if (status === 'confirmed') return 'Confirmado'
-  if (status === 'not-found') return 'No encontrado'
-  if (status === 'error') return 'Error'
-  if (status === 'simulado') return 'Simulado'
-  return status || ''
-}
-
-function formatWhen(value) {
-  if (!value && value !== 0) return ''
-  try {
-    let date = null
-    if (typeof value === 'number' || /^\d{10,13}$/.test(String(value).trim())) {
-      date = new Date(Number(value))
-    } else {
-      date = new Date(value)
-    }
-    if (Number.isNaN(date.getTime())) return String(value)
-    return date.toLocaleString('es-VE', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return value
-  }
-}
-
-const INITIAL_FILTERS = {
-  caja: '',
-  type: '',
-  status: '',
-  search: ''
-}
+import './css/MovementsToolbar.css'
+import './css/MovementsTable.css'
+import './css/MovementsPagination.css'
 
 function Movements({ session, onBack }) {
   const [items, setItems] = useState([])
-  const [filters, setFilters] = useState(INITIAL_FILTERS)
+  const [activeTab, setActiveTab] = useState('all') // 'all' | 'validacion' | 'vuelto'
+  const [selectedCaja, setSelectedCaja] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [datePreset, setDatePreset] = useState('today') // 'today' | 'yesterday' | 'week' | 'all'
+  const [sortField, setSortField] = useState('date') // 'date' | 'amount'
+  const [sortOrder, setSortOrder] = useState('desc') // 'desc' | 'asc'
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
   const [exporting, setExporting] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
@@ -51,13 +30,14 @@ function Movements({ session, onBack }) {
   useEffect(() => {
     let cancelled = false
     listMovements(session).then((rows) => {
-      if (!cancelled) setItems(rows)
+      if (!cancelled) setItems(rows || [])
     })
     return () => {
       cancelled = true
     }
   }, [session])
 
+  // Opciones de caja para el selector de Admin
   const cajasOptions = useMemo(() => {
     const map = new Map()
     for (const item of items) {
@@ -69,56 +49,125 @@ function Movements({ session, onBack }) {
     return Array.from(map.entries()).map(([key, label]) => ({ key, label }))
   }, [items])
 
-  const filteredItems = useMemo(() => {
-    if (!isAdmin) return items
-
-    return items.filter((item) => {
-      if (filters.caja) {
-        const itemKey = item.username || item.label
-        if (itemKey !== filters.caja) return false
-      }
-
-      if (filters.type && item.type !== filters.type) {
-        return false
-      }
-
-      if (filters.status && item.status !== filters.status) {
-        return false
-      }
-
-      if (filters.search) {
-        const query = filters.search.trim().toLowerCase()
-        const text = [
-          item.label,
-          item.username,
-          item.reference,
-          item.phone,
-          item.bank,
-          item.cedula,
-          item.note
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-
-        if (!text.includes(query)) return false
-      }
-
-      return true
+  // Conteos para las pestañas según la fecha activa
+  const tabCounts = useMemo(() => {
+    const itemsInPeriod = items.filter((item) => {
+      const rawDate = item.at || item.created_at || item.date || item.timestamp
+      return isDateInPreset(rawDate, datePreset)
     })
-  }, [items, isAdmin, filters])
 
-  function handleFilterChange(key, value) {
-    setFilters((prev) => ({ ...prev, [key]: value }))
+    const all = itemsInPeriod.length
+    const validacion = itemsInPeriod.filter((i) => i.type === 'validacion').length
+    const vuelto = itemsInPeriod.filter((i) => i.type === 'vuelto').length
+
+    return { all, validacion, vuelto }
+  }, [items, datePreset])
+
+  // Filtrado de movimientos
+  const filteredItems = useMemo(() => {
+    return items
+      .filter((item) => {
+        // 1. Filtro por Caja (solo Admin)
+        if (isAdmin && selectedCaja) {
+          const itemKey = item.username || item.label
+          if (itemKey !== selectedCaja) return false
+        }
+
+        // 2. Filtro por Pestaña activa (Todas / Validaciones / Vueltos)
+        if (activeTab === 'validacion' && item.type !== 'validacion') return false
+        if (activeTab === 'vuelto' && item.type !== 'vuelto') return false
+
+        // 3. Filtro por Estado
+        if (statusFilter && item.status !== statusFilter) return false
+
+        // 4. Filtro por Período / Fecha
+        const rawDate = item.at || item.created_at || item.date || item.timestamp
+        if (!isDateInPreset(rawDate, datePreset)) return false
+
+        // 5. Búsqueda por texto (referencia, teléfono, cédula, banco, etc.)
+        if (searchQuery.trim()) {
+          const q = searchQuery.trim().toLowerCase()
+          const combinedText = [
+            item.reference,
+            item.phone,
+            item.cedula,
+            item.bank,
+            item.label,
+            item.username,
+            item.note,
+            item.amount
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+          if (!combinedText.includes(q)) return false
+        }
+
+        return true
+      })
+      .sort((a, b) => {
+        if (sortField === 'amount') {
+          const amountA = parseAmount(a.amount)
+          const amountB = parseAmount(b.amount)
+          return sortOrder === 'asc' ? amountA - amountB : amountB - amountA
+        }
+
+        // Ordenamiento por fecha por defecto
+        const dateA = parseDate(a.at || a.created_at || a.date || a.timestamp)?.getTime() || 0
+        const dateB = parseDate(b.at || b.created_at || b.date || b.timestamp)?.getTime() || 0
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+      })
+  }, [items, isAdmin, selectedCaja, activeTab, statusFilter, datePreset, searchQuery, sortField, sortOrder])
+
+  // Paginación segura derivada del total de páginas
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+
+  const paginatedItems = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize
+    return filteredItems.slice(start, start + pageSize)
+  }, [filteredItems, safeCurrentPage, pageSize])
+
+  function handleTabChange(tab) {
+    setActiveTab(tab)
+    setCurrentPage(1)
+  }
+
+  function handleSortChange(field) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('desc')
+    }
   }
 
   function handleResetFilters() {
-    setFilters(INITIAL_FILTERS)
+    setSelectedCaja('')
+    setSearchQuery('')
+    setStatusFilter('')
+    setDatePreset('today')
+    setCurrentPage(1)
+  }
+
+  const hasActiveFilters = Boolean(
+    selectedCaja || searchQuery || statusFilter || datePreset !== 'today'
+  )
+
+  const datePresetLabels = {
+    today: 'hoy',
+    yesterday: 'ayer',
+    week: 'en los últimos 7 días',
+    all: 'en total'
   }
 
   async function handleExport() {
     if (filteredItems.length === 0) {
-      setFeedback({ type: 'error', text: 'No hay validaciones ni vueltos para exportar con los filtros seleccionados.' })
+      setFeedback({
+        type: 'error',
+        text: 'No hay validaciones ni vueltos para exportar con los filtros seleccionados.'
+      })
       return
     }
 
@@ -126,7 +175,8 @@ function Movements({ session, onBack }) {
     setFeedback(null)
 
     try {
-      const result = await exportMovementsToExcel(filteredItems, { onlyToday: true })
+      const isOnlyToday = datePreset === 'today'
+      const result = await exportMovementsToExcel(filteredItems, { onlyToday: isOnlyToday })
       const valids = result.validacionesCount ?? 0
       const vueltos = result.vueltosCount ?? 0
       const cajasCount = result.sheetsCount ?? 1
@@ -143,9 +193,10 @@ function Movements({ session, onBack }) {
         detail = `${totalRecords} registro${totalRecords > 1 ? 's' : ''}`
       }
 
+      const periodDesc = isOnlyToday ? 'del día de hoy' : 'del período seleccionado'
       setFeedback({
         type: 'success',
-        text: `Excel descargado con éxito: ${detail} del día de hoy en ${cajasCount} caja${cajasCount > 1 ? 's' : ''}.`
+        text: `Excel descargado con éxito: ${detail} ${periodDesc} en ${cajasCount} caja${cajasCount > 1 ? 's' : ''}.`
       })
     } catch (err) {
       console.error('Error al exportar movimientos:', err)
@@ -160,10 +211,18 @@ function Movements({ session, onBack }) {
 
   return (
     <section className="movements-screen">
-      <button type="button" className="modal-back-button" onClick={onBack}>
-        ← Menú
-      </button>
+      {/* 1. Miga de pan / Navegación */}
+      <div className="movements-breadcrumb">
+        <button type="button" className="modal-back-button" onClick={onBack}>
+          ← Menú
+        </button>
+        <span>/</span>
+        <span className="movements-breadcrumb-path">Cajas Registradoras</span>
+        <span>/</span>
+        <span className="movements-breadcrumb-current">Movimientos</span>
+      </div>
 
+      {/* 2. Cabecera principal y botón Exportar */}
       <div className="movements-header">
         <div className="movements-header-text">
           <h1>Movimientos</h1>
@@ -180,57 +239,95 @@ function Movements({ session, onBack }) {
             className="movements-export-button"
             onClick={handleExport}
             disabled={exporting || items.length === 0}
-            title="Exportar a Excel los movimientos del día organizados por caja"
+            title="Exportar a Excel los movimientos seleccionados organizados por caja"
           >
             <span>📊</span> {exporting ? 'Exportando...' : 'Exportar a Excel'}
           </button>
         )}
       </div>
 
+      {/* 3. Feedback tras exportar u operar */}
       {feedback && (
         <div className={`movements-feedback ${feedback.type}`}>
           {feedback.text}
         </div>
       )}
 
-      {isAdmin && (
-        <MovementsFilter
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-          cajas={cajasOptions}
-          filteredCount={filteredItems.length}
-          totalCount={items.length}
+      {/* 4. Pestañas superiores (Todas | Validaciones | Vueltos) */}
+      <MovementsTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        counts={tabCounts}
+        periodLabel={datePresetLabels[datePreset] || 'en este período'}
+        currentCount={filteredItems.length}
+      />
+
+      {/* 5. Barra unificada de búsqueda y filtros */}
+      <MovementsToolbar
+        isAdmin={isAdmin}
+        cajas={cajasOptions}
+        selectedCaja={selectedCaja}
+        onCajaChange={(caja) => {
+          setSelectedCaja(caja)
+          setCurrentPage(1)
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q)
+          setCurrentPage(1)
+        }}
+        datePreset={datePreset}
+        onDatePresetChange={(preset) => {
+          setDatePreset(preset)
+          setCurrentPage(1)
+        }}
+        statusFilter={statusFilter}
+        onStatusFilterChange={(st) => {
+          setStatusFilter(st)
+          setCurrentPage(1)
+        }}
+        onResetFilters={handleResetFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
+
+      {/* 6. Tabla de datos (8 columnas, ordenable y con referencia) */}
+      <MovementsTable
+        items={paginatedItems}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
+        emptyMessage={
+          items.length === 0
+            ? 'Aún no hay movimientos registrados.'
+            : 'No se encontraron movimientos con los filtros aplicados.'
+        }
+      />
+
+      {/* 7. Paginación */}
+      {filteredItems.length > 0 && (
+        <MovementsPagination
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setCurrentPage(1)
+          }}
+          totalItems={filteredItems.length}
         />
       )}
 
-      {items.length === 0 ? (
-        <p className="movements-empty">Aún no hay movimientos en este navegador.</p>
-      ) : filteredItems.length === 0 ? (
-        <p className="movements-empty">No se encontraron movimientos con los filtros aplicados.</p>
-      ) : (
-        <ul className="movements-list">
-          {filteredItems.map((item) => (
-            <li key={item.id} className={`movements-item ${item.status}`}>
-              <div>
-                <strong>
-                  {item.type === 'vuelto' ? 'Vuelto' : 'Validación'}
-                </strong>
-                <span>{formatWhen(item.at || item.created_at || item.date || item.timestamp)}</span>
-              </div>
-              <p>
-                {item.label} · {statusLabel(item.status)}
-                {item.amount ? ` · ${item.amount}` : ''}
-              </p>
-              <p>
-                {[item.bank, item.phone, item.reference, item.cedula]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* 8. Pie informativo tipo fintech */}
+      <footer className="movements-footer-info">
+        <div className="movements-sync-status">
+          <span className="sync-dot" />
+          <span>Base de datos sincronizada en tiempo real</span>
+        </div>
+        <div>
+          <span>© PagoCheck. Todos los derechos reservados.</span>
+        </div>
+      </footer>
     </section>
   )
 }

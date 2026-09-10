@@ -1,0 +1,343 @@
+/* =========================================================
+   PAGOCHECK — TABS Y TOOLBAR DE MOVIMIENTOS
+   ========================================================= */
+
+/* Pestañas superiores */
+.movements-tabs-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.movements-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.movements-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+  margin-bottom: -1px;
+}
+
+.movements-tab:hover {
+  color: var(--text-primary);
+}
+
+.movements-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.movements-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  color: var(--badge-text);
+  transition: var(--transition-theme);
+}
+
+.movements-tab.active .movements-tab-badge {
+  background: rgba(0, 229, 163, 0.15);
+  border-color: rgba(0, 229, 163, 0.35);
+  color: var(--primary);
+}
+
+.movements-tabs-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.movements-tabs-summary strong {
+  color: var(--text-primary);
+}
+
+/* =========================================================
+   BARRA UNIFICADA DE BÚSQUEDA Y FILTROS
+   ========================================================= */
+
+.movements-toolbar-wrapper {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.movements-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-theme);
+  flex-wrap: wrap;
+}
+
+/* Selector de caja a la izquierda */
+.movements-caja-select-container {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--card-border);
+  padding-right: 10px;
+}
+
+.movements-caja-select {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 24px 8px 8px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+.movements-caja-select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.movements-caja-badge-fixed {
+  border-right: 1px solid var(--card-border);
+  padding-right: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Buscador central */
+.movements-search-box {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.movements-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 8px;
+  outline: none;
+}
+
+.movements-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.movements-search-button {
+  padding: 6px 14px;
+  background: rgba(0, 229, 163, 0.12);
+  border: 1px solid rgba(0, 229, 163, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.movements-search-button:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* Acciones a la derecha: Filtros y Selector de fecha */
+.movements-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.movements-filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-sm);
+  color: var(--badge-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+  position: relative;
+}
+
+.movements-filters-toggle:hover,
+.movements-filters-toggle.open {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filter-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: inline-block;
+}
+
+.movements-date-select-container {
+  display: flex;
+  align-items: center;
+}
+
+.movements-date-select {
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-sm);
+  color: var(--badge-text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 28px 7px 12px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: var(--transition-theme);
+}
+
+.movements-date-select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.movements-date-select:hover {
+  border-color: var(--primary);
+}
+
+/* Panel colapsable de filtros avanzados */
+.movements-advanced-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.2s ease;
+  flex-wrap: wrap;
+}
+
+.movements-advanced-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.movements-advanced-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.movements-advanced-group select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 6px 26px 6px 10px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.movements-advanced-group select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.movements-reset-link {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 4px 8px;
+  transition: var(--transition-theme);
+}
+
+.movements-reset-link:hover {
+  color: var(--primary);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .movements-caja-select-container {
+    border-right: none;
+    width: 100%;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 8px;
+  }
+
+  .movements-search-box {
+    width: 100%;
+  }
+
+  .movements-toolbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+}
