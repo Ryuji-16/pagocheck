@@ -192,3 +192,31 @@ export function isDateInPreset(dateValue, preset) {
 
   return true
 }
+
+/** Prefijos de operadoras móviles en Venezuela (Digitel, Movistar, Movilnet) */
+export const VE_MOBILE_PREFIXES = ['0412', '0422', '0414', '0424', '0416', '0426']
+
+/**
+ * Formatea un número de teléfono al formato '04XX-XXXXXXX' (máx 11 dígitos).
+ * @param {string} value
+ * @returns {string}
+ */
+export function formatPhoneNumber(value) {
+  const digits = String(value || '').replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 4) {
+    return digits
+  }
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`
+}
+
+/**
+ * Valida si un número telefónico es válido en Venezuela (11 dígitos y prefijo oficial).
+ * @param {string} value
+ * @returns {boolean}
+ */
+export function isValidVePhone(value) {
+  const digits = String(value || '').replace(/\D/g, '')
+  if (digits.length !== 11) return false
+  const prefix = digits.slice(0, 4)
+  return VE_MOBILE_PREFIXES.includes(prefix)
+}

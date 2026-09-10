@@ -1,0 +1,139 @@
+/* =========================================================
+   PAGOCHECK — CONTROL FINANCIERO Y ARQUEO EN MOVIMIENTOS
+   ========================================================= */
+
+.movements-summary-container {
+  margin-bottom: 20px;
+}
+
+.movements-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.movements-summary-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.2));
+  transition: var(--transition-theme);
+  position: relative;
+  overflow: hidden;
+}
+
+.movements-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+}
+
+.summary-card-income::before {
+  background: var(--primary);
+}
+
+.summary-card-vueltos::before {
+  background: var(--secondary, #6bd7da);
+}
+
+.summary-card-balance::before {
+  background: var(--primary);
+}
+
+.summary-card-total::before {
+  background: var(--text-muted);
+}
+
+.summary-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summary-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.summary-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.summary-card-income .summary-card-icon {
+  background: var(--status-confirmed-bg, rgba(0, 229, 163, 0.15));
+  color: var(--primary);
+}
+
+.summary-card-vueltos .summary-card-icon {
+  background: rgba(107, 215, 218, 0.15);
+  color: var(--secondary, #6bd7da);
+}
+
+.summary-card-balance .summary-card-icon {
+  background: var(--badge-bg);
+  color: var(--primary);
+}
+
+.summary-card-total .summary-card-icon {
+  background: var(--tag-bg, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary);
+}
+
+.summary-card-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.summary-card-balance .summary-card-value {
+  color: var(--primary);
+}
+
+.summary-card-balance.negative .summary-card-value {
+  color: var(--status-error-text, #f87171);
+}
+
+.summary-card-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .movements-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .movements-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

@@ -6,6 +6,7 @@ import MovementsTabs from './MovementsTabs'
 import MovementsToolbar from './MovementsToolbar'
 import MovementsTable from './MovementsTable'
 import MovementsPagination from './MovementsPagination'
+import MovementsSummary from './MovementsSummary'
 import './css/Movements.css'
 import './css/MovementsToolbar.css'
 import './css/MovementsTable.css'
@@ -119,6 +120,17 @@ function Movements({ session, onBack }) {
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
       })
   }, [items, isAdmin, selectedCaja, activeTab, statusFilter, datePreset, searchQuery, sortField, sortOrder])
+
+  // Movimientos filtrados por período y caja para el arqueo financiero consolidado
+  const summaryItems = useMemo(() => {
+    return items.filter((item) => {
+      if (isAdmin && selectedCaja && item.username !== selectedCaja && item.label !== selectedCaja) {
+        return false
+      }
+      const rawDate = item.at || item.created_at || item.date || item.timestamp
+      return isDateInPreset(rawDate, datePreset)
+    })
+  }, [items, isAdmin, selectedCaja, datePreset])
 
   // Paginación segura derivada del total de páginas
   const totalPages = Math.ceil(filteredItems.length / pageSize) || 1
@@ -243,6 +255,9 @@ function Movements({ session, onBack }) {
           {feedback.text}
         </div>
       )}
+
+      {/* Control Financiero y Arqueo Consolidado en tiempo real */}
+      <MovementsSummary items={summaryItems} />
 
       {/* 4. Pestañas superiores (Todas | Validaciones | Vueltos) */}
       <MovementsTabs

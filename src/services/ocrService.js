@@ -154,7 +154,7 @@ function detectBank(text) {
   const lower = normalizeOcr(text)
 
   const emisor = lower.match(
-    /banco\s*(emisor|origen)\s*[:\-]?\s*([a-z0-9 .]{3,40})/
+    /banco\s*(emisor|origen)\s*[-:]?\s*([a-z0-9 .]{3,40})/
   )
   if (emisor) {
     const found = findBankByAliases(emisor[2])
@@ -162,7 +162,7 @@ function detectBank(text) {
   }
 
   const originCode = lower.match(
-    /(?:instrumento\s+origen|origen)\s*[:\-]?\s*(01\d{2})/
+    /(?:instrumento\s+origen|origen)\s*[-:]?\s*(01\d{2})/
   )
   if (originCode) {
     const found = BANKS.find((item) => item.code === originCode[1])
@@ -185,7 +185,7 @@ function detectBank(text) {
   const withoutDestination = lower
     .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
     .replace(/beneficiar[\s\S]{0,80}/g, ' ')
-    .replace(/banco\s*(destino|receptor)\s*[:\-][\s\S]{0,60}/g, ' ')
+    .replace(/banco\s*(destino|receptor)\s*[-:][\s\S]{0,60}/g, ' ')
     .replace(/\bbanco\s*:\s*[\s\S]{0,48}/g, ' ')
 
   return findBankByAliases(header) || findBankByAliases(withoutDestination)
@@ -226,7 +226,7 @@ function extractDate(compact) {
 
 function extractReference(compact) {
   const labeled = compact.match(
-    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*de\s+referencia|referencia|operaci[oó]n)\s*[:\-]?\s*(\d{6,14})/i
+    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*de\s+referencia|referencia|operaci[oó]n)\s*[-:]?\s*(\d{6,14})/i
   )
   if (labeled) return labeled[1]
 
@@ -235,7 +235,7 @@ function extractReference(compact) {
 
 function extractAmount(compact) {
   const labeled = compact.match(
-    /(?:monto(?:\s+de\s+la\s+operaci[oó]n)?(?:\s*\(bs\.?\))?|bs\.?)\s*[:\-]?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{2})|[0-9]+,[0-9]{2})/i
+    /(?:monto(?:\s+de\s+la\s+operaci[oó]n)?(?:\s*\(bs\.?\))?|bs\.?)\s*[-:]?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{2})|[0-9]+,[0-9]{2})/i
   )
   if (labeled) return `Bs. ${labeled[1].replace(/'/g, '.')}`
 

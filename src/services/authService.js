@@ -36,7 +36,7 @@ function toUserRecord(value, fallbackRole = 'caja') {
 }
 
 function readLocalUsers() {
-  let stored = {}
+  let stored
 
   try {
     stored = JSON.parse(localStorage.getItem(USERS_KEY) || '{}') || {}

@@ -25,14 +25,14 @@ export async function remoteRequest(path, options = {}) {
     ...(options.body ? { 'Content-Type': 'application/json', Prefer: options.prefer || 'return=representation' } : {})
   }
 
-  const response = await fetch(options.fullUrl || `${url}/rest/v1/${path.replace(/^\//, '')}`, {
+  const response = await fetch(options.fullUrl || target, {
     method: options.method || 'GET',
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined
   })
 
   const text = await response.text()
-  let data = null
+  let data
   try {
     data = text ? JSON.parse(text) : null
   } catch {

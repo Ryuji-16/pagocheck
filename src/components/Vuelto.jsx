@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import BankSelect from './BankSelect'
+import VueltoReceiptModal from './VueltoReceiptModal'
 import { fetchBcvUsdRate } from '../services/rateService'
 import { saveMovement } from '../services/historyService'
+import { formatPhoneNumber, isValidVePhone } from '../utils/formatters'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 import './css/Vuelto.css'
@@ -53,6 +55,7 @@ function Vuelto({ onBack }) {
   const [rateMeta, setRateMeta] = useState('')
   const [usd, setUsd] = useState('')
   const [concept, setConcept] = useState('')
+  const [receipt, setReceipt] = useState(null)
   const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -81,6 +84,12 @@ function Vuelto({ onBack }) {
       cancelled = true
     }
   }, [])
+
+  function handlePhoneChange(event) {
+    const formatted = formatPhoneNumber(event.target.value)
+    setPhone(formatted)
+    setFormError('')
+  }
 
   function handleVesChange(event) {
     const val = event.target.value
@@ -139,6 +148,17 @@ function Vuelto({ onBack }) {
     }
   }
 
+  function handleNewVuelto() {
+    setReceipt(null)
+    setVes('')
+    setUsd('')
+    setPhone('')
+    setCedula('')
+    setConcept('')
+    setFormError('')
+    setMessage('')
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
@@ -154,6 +174,13 @@ function Vuelto({ onBack }) {
       return
     }
 
+    if (!isValidVePhone(phone)) {
+      setFormError(
+        'El teléfono debe tener 11 dígitos y comenzar con un prefijo válido (0412, 0422, 0414, 0424, 0416 o 0426).'
+      )
+      return
+    }
+
     if (!cedula.trim()) {
       setFormError('Ingresa el número de cédula.')
       return
@@ -165,14 +192,38 @@ function Vuelto({ onBack }) {
       return
     }
 
-    await saveMovement({
+    const referenceCode = `VLT-${Math.floor(100000 + Math.random() * 900000)}`
+    const nowFormatted = new Date().toLocaleString('es-VE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+
+    const newMovement = await saveMovement({
       type: 'vuelto',
       status: 'simulado',
       amount: `Bs. ${formatBs(amountValue)}`,
+      reference: referenceCode,
       phone: phone.trim(),
       bank,
       cedula: `${idType}-${cedula.trim()}`,
       note: concept.trim() || 'Vuelto pago móvil'
+    })
+
+    const finalReference = newMovement?.reference || referenceCode
+
+    setReceipt({
+      amountBs: `Bs. ${formatBs(amountValue)}`,
+      amountUsd: usd || null,
+      bank,
+      cedula: `${idType}-${cedula.trim()}`,
+      phone: phone.trim(),
+      concept: concept.trim() || 'Vuelto pago móvil',
+      reference: finalReference,
+      date: nowFormatted
     })
 
     setMessage(
@@ -244,11 +295,9 @@ function Vuelto({ onBack }) {
               type="tel"
               inputMode="numeric"
               placeholder="0412-0000000"
+              maxLength={12}
               value={phone}
-              onChange={(event) => {
-                setPhone(event.target.value)
-                setFormError('')
-              }}
+              onChange={handlePhoneChange}
             />
           </label>
 
@@ -313,6 +362,14 @@ function Vuelto({ onBack }) {
           </button>
         </form>
       </div>
+
+      {receipt && (
+        <VueltoReceiptModal
+          receipt={receipt}
+          onClose={() => setReceipt(null)}
+          onNewVuelto={handleNewVuelto}
+        />
+      )}
     </section>
   )
 }

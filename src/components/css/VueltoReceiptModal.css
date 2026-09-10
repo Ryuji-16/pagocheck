@@ -1,0 +1,249 @@
+/* =========================================================
+   PAGOCHECK — COMPROBANTE DE VUELTO (MODAL RECEIPT)
+   ========================================================= */
+
+.receipt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(7, 24, 19, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.receipt-modal {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px 28px 28px;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-xl, 20px);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+  animation: receiptModalIn 0.22s ease-out;
+  transition: var(--transition-theme);
+}
+
+@keyframes receiptModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.receipt-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.receipt-close:hover {
+  background: var(--tag-bg, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary);
+}
+
+.receipt-icon-box {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  background: var(--status-confirmed-bg, rgba(0, 229, 163, 0.15));
+  color: var(--primary);
+  border: 2px solid var(--status-confirmed-border, rgba(0, 229, 163, 0.35));
+}
+
+.receipt-modal h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.receipt-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Destacado de monto */
+.receipt-amount-card {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--tag-bg, var(--screen-bg));
+  border: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.receipt-amount-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.receipt-amount-main {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.receipt-amount-usd {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Lista de detalles */
+.receipt-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.receipt-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--card-border);
+  font-size: 13px;
+}
+
+.receipt-detail-item:last-child {
+  border-bottom: none;
+}
+
+.receipt-detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.receipt-detail-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+  max-width: 60%;
+}
+
+.receipt-reference-code {
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+}
+
+.receipt-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--status-confirmed-bg, rgba(0, 229, 163, 0.15));
+  color: var(--status-confirmed-text, #00e5a3);
+  border: 1px solid var(--status-confirmed-border, rgba(0, 229, 163, 0.35));
+}
+
+.receipt-status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* Botones de acción */
+.receipt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receipt-copy-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--primary-hover);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition-theme);
+}
+
+.receipt-copy-btn:hover {
+  background: var(--primary-hover);
+}
+
+.receipt-copy-btn.copied {
+  background: var(--badge-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.receipt-secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.receipt-secondary-btn {
+  min-height: 40px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.receipt-secondary-btn:hover {
+  background: var(--tag-bg, var(--screen-bg));
+  border-color: var(--card-border-strong);
+}
