@@ -26,15 +26,6 @@
   margin-bottom: 0;
 }
 
-.movements-breadcrumb-path {
-  color: var(--text-secondary);
-}
-
-.movements-breadcrumb-current {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 /* =========================================================
    CABECERA PRINCIPAL Y ACCIONES
    ========================================================= */
@@ -49,17 +40,11 @@
 }
 
 .movements-header-text h1 {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 30px;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.6px;
-}
-
-.movements-header-text p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-secondary);
 }
 
 .movements-export-button {
@@ -115,33 +100,4 @@
   color: var(--status-error-text);
 }
 
-/* =========================================================
-   PIE DE PÁGINA INFORMATIVO
-   ========================================================= */
 
-.movements-footer-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--card-border);
-  font-size: 12px;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-}
-
-.movements-sync-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sync-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: 0 0 6px var(--primary);
-}

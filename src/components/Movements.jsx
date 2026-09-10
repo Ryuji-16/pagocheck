@@ -216,21 +216,12 @@ function Movements({ session, onBack }) {
         <button type="button" className="modal-back-button" onClick={onBack}>
           ← Menú
         </button>
-        <span>/</span>
-        <span className="movements-breadcrumb-path">Cajas Registradoras</span>
-        <span>/</span>
-        <span className="movements-breadcrumb-current">Movimientos</span>
       </div>
 
       {/* 2. Cabecera principal y botón Exportar */}
       <div className="movements-header">
         <div className="movements-header-text">
           <h1>Movimientos</h1>
-          <p>
-            {isAdmin
-              ? 'Admin: ves las cajas conectadas a la misma base.'
-              : `Solo ves lo hecho por ${session.label || session.username}.`}
-          </p>
         </div>
 
         {isAdmin && (
@@ -317,17 +308,6 @@ function Movements({ session, onBack }) {
           totalItems={filteredItems.length}
         />
       )}
-
-      {/* 8. Pie informativo tipo fintech */}
-      <footer className="movements-footer-info">
-        <div className="movements-sync-status">
-          <span className="sync-dot" />
-          <span>Base de datos sincronizada en tiempo real</span>
-        </div>
-        <div>
-          <span>© PagoCheck. Todos los derechos reservados.</span>
-        </div>
-      </footer>
     </section>
   )
 }

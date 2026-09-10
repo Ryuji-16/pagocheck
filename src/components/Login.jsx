@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { getDemoAccounts, login, isRemoteAuthEnabled } from '../services/authService'
+import { getDemoAccounts, login } from '../services/authService'
 import './css/Login.css'
 
 function Login({ onLogin, theme: propTheme, onToggleTheme }) {
@@ -14,7 +14,6 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
   const [localTheme, setLocalTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
   const toastTimerRef = useRef(null)
 
-  const isRemote = isRemoteAuthEnabled()
   const theme = propTheme || localTheme
 
   function toggleTheme() {
@@ -236,14 +235,7 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
               </div>
             )}
 
-            {/* Footer de estado dentro de la tarjeta */}
-            <div className="login-card-footer">
-              <div className="login-sync-status">
-                <span className="login-sync-dot"></span>
-                <span>Sync: {isRemote ? 'Nube Supabase' : 'Almacenamiento Local'}</span>
-              </div>
-              <span className="login-latency-text">Latencia: 18ms</span>
-            </div>
+
           </div>
 
           {/* Columna Derecha: Cuentas Demo Preconfiguradas */}
@@ -312,17 +304,7 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
               })}
             </div>
 
-            {/* Tarjeta Informativa de Topología */}
-            <div className="login-topology-card">
-              <span className="material-symbols-outlined login-topology-icon">hub</span>
-              <div className="login-topology-content">
-                <strong>Topología Multiterminal Activa</strong>
-                <p>
-                  Las órdenes ingresadas en Caja 1, Caja 2 o Caja 3 se sincronizan en tiempo real
-                  con el panel administrativo para balance de inventario y arqueo consolidado.
-                </p>
-              </div>
-            </div>
+
           </div>
         </div>
 
