@@ -36,33 +36,14 @@
   box-shadow: 0 0 0 3px rgba(0, 229, 163, 0.18);
 }
 
-.amount-mode {
+.tasa-monto-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
 }
 
-.amount-mode button {
-  min-height: 40px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  color: var(--text-secondary);
-  font-size: 13px;
+.tasa-usd-input {
+  background: var(--tag-bg, var(--screen-bg)) !important;
+  color: var(--text-primary);
   font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-theme);
-}
-
-.amount-mode button.active {
-  border-color: var(--badge-border);
-  background: var(--badge-bg);
-  color: var(--badge-text);
-}
-
-.rate-note {
-  margin: -8px 0 8px;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
 }

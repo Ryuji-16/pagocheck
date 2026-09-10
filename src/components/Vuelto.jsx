@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import BankSelect from './BankSelect'
 import { fetchBcvUsdRate } from '../services/rateService'
 import { saveMovement } from '../services/historyService'
@@ -10,14 +10,20 @@ const RATE_KEY = 'pagocheck-usd-rate'
 
 function readRate() {
   try {
-    return localStorage.getItem(RATE_KEY) || ''
+    const stored = localStorage.getItem(RATE_KEY)
+    if (!stored) return ''
+    const num = parseAmount(stored)
+    return Number.isFinite(num) && num > 0 ? `Bs. ${num.toFixed(2)}` : stored
   } catch {
     return ''
   }
 }
 
 function parseAmount(value) {
-  let normalized = String(value || '').trim().replace(/\s/g, '')
+  let normalized = String(value || '')
+    .trim()
+    .replace(/\s/g, '')
+    .replace(/Bs\.?/gi, '')
   if (!normalized) return NaN
 
   if (normalized.includes(',') && normalized.includes('.')) {
@@ -42,12 +48,11 @@ function Vuelto({ onBack }) {
   const [phone, setPhone] = useState('')
   const [idType, setIdType] = useState('V')
   const [cedula, setCedula] = useState('')
-  const [concept, setConcept] = useState('')
-  const [mode, setMode] = useState('ves')
+  const [ves, setVes] = useState('')
   const [rate, setRate] = useState(readRate)
   const [rateMeta, setRateMeta] = useState('')
   const [usd, setUsd] = useState('')
-  const [ves, setVes] = useState('')
+  const [concept, setConcept] = useState('')
   const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -57,9 +62,10 @@ function Vuelto({ onBack }) {
     fetchBcvUsdRate()
       .then((result) => {
         if (cancelled) return
-        const next = String(result.usd)
-        setRate(next)
-        localStorage.setItem(RATE_KEY, next)
+        const num = Number(result.usd)
+        const nextFormatted = Number.isFinite(num) && num > 0 ? `Bs. ${num.toFixed(2)}` : String(result.usd)
+        setRate(nextFormatted)
+        localStorage.setItem(RATE_KEY, nextFormatted)
         setRateMeta(
           result.date
             ? `Tasa BCV del ${result.date}`
@@ -76,14 +82,62 @@ function Vuelto({ onBack }) {
     }
   }, [])
 
-  const convertedBs = useMemo(() => {
-    const usdValue = parseAmount(usd)
-    const rateValue = parseAmount(rate)
-    if (!usdValue || !rateValue) return ''
-    return formatBs(usdValue * rateValue)
-  }, [usd, rate])
+  function handleVesChange(event) {
+    const val = event.target.value
+    setVes(val)
+    setFormError('')
 
-  const amountBs = mode === 'usd' ? convertedBs : ves
+    const vesNum = parseAmount(val)
+    const rateNum = parseAmount(rate)
+    if (Number.isFinite(vesNum) && vesNum > 0 && Number.isFinite(rateNum) && rateNum > 0) {
+      const calcUsd = (vesNum / rateNum).toFixed(2).replace('.', ',')
+      setUsd(calcUsd)
+    } else if (!val.trim()) {
+      setUsd('')
+    }
+  }
+
+  function handleUsdChange(event) {
+    const val = event.target.value
+    setUsd(val)
+    setFormError('')
+
+    const usdNum = parseAmount(val)
+    const rateNum = parseAmount(rate)
+    if (Number.isFinite(usdNum) && usdNum > 0 && Number.isFinite(rateNum) && rateNum > 0) {
+      const calcVes = formatBs(usdNum * rateNum)
+      setVes(calcVes)
+    } else if (!val.trim()) {
+      setVes('')
+    }
+  }
+
+  function handleRateChange(event) {
+    const val = event.target.value
+    setRate(val)
+    setFormError('')
+
+    const rateNum = parseAmount(val)
+    const usdNum = parseAmount(usd)
+    const vesNum = parseAmount(ves)
+
+    if (Number.isFinite(rateNum) && rateNum > 0) {
+      if (Number.isFinite(usdNum) && usdNum > 0) {
+        setVes(formatBs(usdNum * rateNum))
+      } else if (Number.isFinite(vesNum) && vesNum > 0) {
+        setUsd((vesNum / rateNum).toFixed(2).replace('.', ','))
+      }
+    }
+  }
+
+  function handleRateBlur() {
+    const rateNum = parseAmount(rate)
+    if (Number.isFinite(rateNum) && rateNum > 0) {
+      const formatted = `Bs. ${rateNum.toFixed(2)}`
+      setRate(formatted)
+      localStorage.setItem(RATE_KEY, formatted)
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -105,14 +159,9 @@ function Vuelto({ onBack }) {
       return
     }
 
-    const amountValue = parseAmount(amountBs)
+    const amountValue = parseAmount(ves)
     if (!amountValue) {
       setFormError('Ingresa el monto en bolívares.')
-      return
-    }
-
-    if (mode === 'usd' && !parseAmount(rate)) {
-      setFormError('Ingresa la tasa USD a Bs.')
       return
     }
 
@@ -127,7 +176,7 @@ function Vuelto({ onBack }) {
     })
 
     setMessage(
-      `Simulación: se enviaría Bs. ${formatBs(amountValue)} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}${concept.trim() ? ` — Concepto: ${concept.trim()}` : ''}. Aquí irá la API de Banesco.`
+      `Simulación: se enviaría Bs. ${formatBs(amountValue)}${usd ? ` ($${usd})` : ''} a ${phone.trim()} (${idType}-${cedula.trim()}) por ${bank}${concept.trim() ? ` — Concepto: ${concept.trim()}` : ''}. Aquí irá la API de Banesco.`
     )
   }
 
@@ -203,87 +252,51 @@ function Vuelto({ onBack }) {
             />
           </label>
 
-          {/* 4. Monto (Manual Bs o Desde USD con tasa BCV) */}
-          <div className="amount-mode">
-            <button
-              type="button"
-              className={mode === 'ves' ? 'active' : ''}
-              onClick={() => setMode('ves')}
-            >
-              Manual Bs
-            </button>
-            <button
-              type="button"
-              className={mode === 'usd' ? 'active' : ''}
-              onClick={() => setMode('usd')}
-            >
-              Desde USD
-            </button>
-          </div>
+          {/* 4. Monto Bs. (Ancho completo) */}
+          <label>
+            <span>Monto Bs.</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={ves}
+              onChange={handleVesChange}
+            />
+          </label>
 
-          {mode === 'usd' && (
-            <>
-              <label>
-                <span>Tasa BCV (Bs por 1 USD)</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Se carga sola"
-                  value={rate}
-                  onChange={(event) => {
-                    const next = event.target.value
-                    setRate(next)
-                    localStorage.setItem(RATE_KEY, next)
-                    setRateMeta('Tasa editada a mano')
-                    setFormError('')
-                  }}
-                />
-              </label>
-              {rateMeta && <p className="rate-note">{rateMeta}</p>}
-
-              <label>
-                <span>Monto USD</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="3"
-                  value={usd}
-                  onChange={(event) => {
-                    setUsd(event.target.value)
-                    setFormError('')
-                  }}
-                />
-              </label>
-
-              <label>
-                <span>Monto a enviar (Bs)</span>
-                <input type="text" readOnly value={convertedBs} placeholder="0,00" />
-              </label>
-            </>
-          )}
-
-          {mode === 'ves' && (
+          {/* 5. Tasa USD y Monto USD (2 Columnas) */}
+          <div className="tasa-monto-row">
             <label>
-              <span>Monto en bolívares</span>
+              <span>Tasa USD</span>
+              <input
+                type="text"
+                className="tasa-usd-input"
+                placeholder="Bs. 0,00"
+                value={rate}
+                title={rateMeta}
+                onChange={handleRateChange}
+                onBlur={handleRateBlur}
+              />
+            </label>
+
+            <label>
+              <span>Monto USD</span>
               <input
                 type="text"
                 inputMode="decimal"
                 placeholder="0,00"
-                value={ves}
-                onChange={(event) => {
-                  setVes(event.target.value)
-                  setFormError('')
-                }}
+                value={usd}
+                onChange={handleUsdChange}
               />
             </label>
-          )}
+          </div>
 
-          {/* 5. Concepto */}
+          {/* 6. Concepto */}
           <label>
             <span>Concepto</span>
             <input
               type="text"
-              placeholder="Concepto de la operación (ej: Vuelto compra)"
+              placeholder="Concepto de la operación"
               value={concept}
               onChange={(event) => {
                 setConcept(event.target.value)
