@@ -92,7 +92,7 @@ function App() {
               Comprueba que el pago fue recibido correctamente.
             </p>
 
-            <UploadZone />
+            <UploadZone onBack={goMenu} />
           </>
         )}
 

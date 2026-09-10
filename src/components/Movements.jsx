@@ -13,8 +13,16 @@ function statusLabel(status) {
 }
 
 function formatWhen(value) {
+  if (!value && value !== 0) return ''
   try {
-    return new Date(value).toLocaleString('es-VE', {
+    let date = null
+    if (typeof value === 'number' || /^\d{10,13}$/.test(String(value).trim())) {
+      date = new Date(Number(value))
+    } else {
+      date = new Date(value)
+    }
+    if (Number.isNaN(date.getTime())) return String(value)
+    return date.toLocaleString('es-VE', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
@@ -208,7 +216,7 @@ function Movements({ session, onBack }) {
                 <strong>
                   {item.type === 'vuelto' ? 'Vuelto' : 'Validación'}
                 </strong>
-                <span>{formatWhen(item.at)}</span>
+                <span>{formatWhen(item.at || item.created_at || item.date || item.timestamp)}</span>
               </div>
               <p>
                 {item.label} · {statusLabel(item.status)}

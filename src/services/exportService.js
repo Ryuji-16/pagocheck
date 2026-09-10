@@ -37,26 +37,112 @@ function parseAmount(val) {
   return parseFloat(clean) || 0
 }
 
-function isToday(dateValue) {
-  if (!dateValue) return false
+export function isToday(dateValue) {
+  if (!dateValue && dateValue !== 0) return false
   try {
-    const d = new Date(dateValue)
-    if (Number.isNaN(d.getTime())) return false
     const now = new Date()
-    return (
+    const str = String(dateValue).trim()
+
+    // 1. Coincidencia directa con fecha de hoy formateada (Caracas, Local y UTC)
+    const localYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const localDMY = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    const localDMYDash = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`
+
+    let caracasYMD = ''
+    let caracasDMY = ''
+    let caracasDMYDash = ''
+    try {
+      caracasYMD = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(now)
+      const [cy, cm, cd] = caracasYMD.split('-')
+      caracasDMY = `${cd}/${cm}/${cy}`
+      caracasDMYDash = `${cd}-${cm}-${cy}`
+    } catch (e) {
+      void e
+    }
+
+    const utcYMD = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`
+    const utcDMY = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`
+
+    const todayPatterns = [
+      localYMD,
+      localDMY,
+      localDMYDash,
+      caracasYMD,
+      caracasDMY,
+      caracasDMYDash,
+      utcYMD,
+      utcDMY
+    ].filter(Boolean)
+
+    for (const pat of todayPatterns) {
+      if (str.startsWith(pat) || str.includes(pat)) {
+        return true
+      }
+    }
+
+    // 2. Parsear el valor de fecha según su formato
+    let d = null
+    if (typeof dateValue === 'number' || /^\d{10,13}$/.test(str)) {
+      d = new Date(Number(dateValue))
+    } else {
+      const ymd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+      if (ymd && !str.includes('T') && !str.includes(':')) {
+        d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]), 12, 0, 0)
+      } else {
+        const dmy = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/)
+        if (dmy && !str.includes('T')) {
+          d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]), 12, 0, 0)
+        } else {
+          d = new Date(dateValue)
+        }
+      }
+    }
+
+    if (!d || Number.isNaN(d.getTime())) return false
+
+    // 3. Comparar fecha local
+    if (
       d.getFullYear() === now.getFullYear() &&
       d.getMonth() === now.getMonth() &&
       d.getDate() === now.getDate()
-    )
+    ) {
+      return true
+    }
+
+    // 4. Comparar fecha en zona horaria de Venezuela (America/Caracas)
+    if (caracasYMD) {
+      try {
+        const dCaracas = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(d)
+        if (dCaracas === caracasYMD) return true
+      } catch (e) {
+        void e
+      }
+    }
+
+    // 5. Comparar fecha en UTC
+    if (
+      d.getUTCFullYear() === now.getUTCFullYear() &&
+      d.getUTCMonth() === now.getUTCMonth() &&
+      d.getUTCDate() === now.getUTCDate()
+    ) {
+      return true
+    }
+
+    return false
   } catch {
     return false
   }
 }
 
 function formatWhen(value) {
-  if (!value) return ''
+  if (!value && value !== 0) return ''
   try {
-    const date = new Date(value)
+    let date = null
+    if (typeof value === 'number' || /^\d{10,13}$/.test(String(value).trim())) {
+      date = new Date(Number(value))
+    } else {
+      date = new Date(value)
+    }
     if (Number.isNaN(date.getTime())) return String(value)
     return date.toLocaleString('es-VE', {
       day: '2-digit',
@@ -151,8 +237,9 @@ function buildSheetData(cajaName, movements) {
     const numAmount = parseAmount(item.amount)
     cajaTotal += numAmount
 
+    const itemDate = item.at || item.created_at || item.date || item.timestamp
     rows.push([
-      { value: formatWhen(item.at), align: 'center' },
+      { value: formatWhen(itemDate), align: 'center' },
       { value: formatType(item.type), align: 'center' },
       { value: formatStatus(item.status), align: 'center' },
       {
@@ -226,7 +313,9 @@ export async function exportMovementsToExcel(movements, options = {}) {
   // Filtrar exclusivamente los movimientos de hoy
   const onlyToday = options.onlyToday !== false
   const targetMovements = onlyToday
-    ? movements.filter((item) => isToday(item.at))
+    ? movements.filter((item) =>
+        isToday(item.at || item.created_at || item.date || item.timestamp)
+      )
     : movements
 
   if (targetMovements.length === 0) {

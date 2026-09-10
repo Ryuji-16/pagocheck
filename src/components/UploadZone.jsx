@@ -8,7 +8,7 @@ import { extractPaymentData } from "../services/ocrService";
 import './css/UploadZone.css'
 import './css/Modals.css'
 
-function UploadZone() {
+function UploadZone({ onBack }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -185,6 +185,13 @@ function UploadZone() {
     setExtractError('')
   }
 
+  function handleGoMenu() {
+    handleBackToMethods()
+    if (typeof onBack === 'function') {
+      onBack()
+    }
+  }
+
   async function handleAnalyzeReceipt() {
     try {
       setIsVerifying(true)
@@ -243,13 +250,23 @@ function UploadZone() {
         <div className="modal-overlay">
           <div className="modal">
 
-            <button
-              type="button"
-              className="modal-back-button"
-              onClick={handleBackToMethods}
-            >
-              ← Cambiar método
-            </button>
+            <div className="modal-nav">
+              <button
+                type="button"
+                className="modal-back-button"
+                onClick={handleGoMenu}
+              >
+                ← Menú
+              </button>
+
+              <button
+                type="button"
+                className="modal-back-button"
+                onClick={handleBackToMethods}
+              >
+                ← Cambiar método
+              </button>
+            </div>
 
             <div className="modal-header">
               <div className="modal-icon">
@@ -376,6 +393,7 @@ function UploadZone() {
 
             <ManualVerification
               onBack={handleBackToMethods}
+              onGoMenu={handleGoMenu}
               onVerify={(data) => {
                 handleVerify(data)
               }}

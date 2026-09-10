@@ -51,6 +51,7 @@ main > p {
 }
 
 body.form-open .demo-banner,
+body.form-open main > .modal-back-button,
 body.form-open main > h1,
 body.form-open main > p {
   visibility: hidden;

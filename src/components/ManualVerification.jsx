@@ -40,7 +40,7 @@ function formatWhen(value) {
   }
 }
 
-function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} }) {
+function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialValues = {} }) {
   const [date, setDate] = useState(initialValues.date || formatToday)
   const [reference, setReference] = useState(initialValues.reference || '')
   const [phone, setPhone] = useState(initialValues.phone || '')
@@ -93,9 +93,23 @@ function ManualVerification({ onVerify, onBack, isVerifying, initialValues = {} 
 
   return (
     <div className="manual-verification">
-      <button type="button" className="modal-back-button" onClick={onBack}>
-        ← Cambiar método
-      </button>
+      <div className="modal-nav">
+        <button
+          type="button"
+          className="modal-back-button"
+          onClick={onGoMenu || onBack}
+        >
+          ← Menú
+        </button>
+
+        <button
+          type="button"
+          className="modal-back-button"
+          onClick={onBack}
+        >
+          ← Cambiar método
+        </button>
+      </div>
 
       <div className="modal-header">
         <div className="modal-icon">✏️</div>

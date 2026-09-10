@@ -64,6 +64,18 @@
   filter: brightness(1.1);
 }
 
+.modal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.modal-nav .modal-back-button {
+  margin-bottom: 0;
+}
+
 /* =========================================================
    CABECERA
    ========================================================= */
