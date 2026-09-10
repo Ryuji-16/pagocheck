@@ -16,22 +16,16 @@ main {
 .demo-banner {
   width: fit-content;
   max-width: 100%;
-
   margin: 0 auto 22px;
-
-  padding: 8px 14px;
-
-  border-radius: 999px;
-
-  background: rgba(217, 164, 65, 0.16);
-
-  border: 1px solid rgba(217, 164, 65, 0.35);
-
-  color: #f3d48a;
-
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+  color: var(--status-warning-text);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.4;
+  transition: var(--transition-theme);
 }
 
 /* =========================================================
@@ -40,12 +34,9 @@ main {
 
 main > h1 {
   margin: 0 0 10px;
-
-  color: var(--text);
-
+  color: var(--text-primary);
   font-size: 34px;
   font-weight: 800;
-
   letter-spacing: -0.8px;
 }
 
@@ -55,9 +46,7 @@ main > h1 {
 
 main > p {
   margin: 0 0 40px;
-
   color: var(--text-secondary);
-
   font-size: 15px;
 }
 

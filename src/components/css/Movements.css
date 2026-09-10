@@ -1,3 +1,7 @@
+/* =========================================================
+   PAGOCHECK — MOVIMIENTOS (DESIGN TOKENS)
+   ========================================================= */
+
 .movements-screen {
   text-align: left;
 }
@@ -13,6 +17,7 @@
 
 .movements-header-text h1 {
   margin: 0 0 8px;
+  color: var(--text-primary);
 }
 
 .movements-header-text p {
@@ -26,20 +31,18 @@
   gap: 8px;
   padding: 10px 18px;
   background: var(--primary);
-  border: 1px solid rgba(119, 176, 170, 0.3);
-  border-radius: 12px;
-  color: var(--text);
+  border: 1px solid var(--primary-hover);
+  border-radius: var(--radius-sm);
+  color: var(--on-primary);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
+  transition: var(--transition-theme);
 }
 
 .movements-export-button:hover:not(:disabled) {
-  background: var(--secondary);
-  color: #070c0e;
-  border-color: var(--secondary);
+  background: var(--primary-hover);
 }
 
 .movements-export-button:disabled {
@@ -50,21 +53,22 @@
 .movements-feedback {
   margin: 0 0 16px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   line-height: 1.4;
+  transition: var(--transition-theme);
 }
 
 .movements-feedback.success {
-  background: rgba(46, 139, 112, 0.16);
-  border: 1px solid rgba(46, 139, 112, 0.35);
-  color: #9be7c8;
+  background: var(--status-confirmed-bg);
+  border: 1px solid var(--status-confirmed-border);
+  color: var(--status-confirmed-text);
 }
 
 .movements-feedback.error {
-  background: rgba(201, 74, 74, 0.16);
-  border: 1px solid rgba(201, 74, 74, 0.35);
-  color: #f3c1c1;
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  color: var(--status-error-text);
 }
 
 .movements-empty {
@@ -81,10 +85,12 @@
 }
 
 .movements-item {
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: #101618;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-theme);
 }
 
 .movements-item div {
@@ -92,6 +98,10 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
+}
+
+.movements-item strong {
+  color: var(--text-primary);
 }
 
 .movements-item span,
@@ -102,10 +112,10 @@
 }
 
 .movements-item.confirmed {
-  border-color: rgba(56, 193, 114, 0.35);
+  border-color: var(--status-confirmed-border);
 }
 
 .movements-item.not-found,
 .movements-item.error {
-  border-color: rgba(201, 74, 74, 0.35);
+  border-color: var(--status-error-border);
 }

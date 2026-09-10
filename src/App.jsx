@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import Login from './components/Login'
 import Menu from './components/Menu'
@@ -13,6 +13,16 @@ import './components/css/Modals.css'
 function App() {
   const [session, setSession] = useState(() => getSession())
   const [screen, setScreen] = useState(() => (getSession() ? 'menu' : 'login'))
+  const [theme, setTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('pagocheck-theme', theme)
+  }, [theme])
+
+  function toggleTheme() {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+  }
 
   function handleLogin(nextSession) {
     setSession(nextSession)
@@ -36,12 +46,18 @@ function App() {
           loggedIn={Boolean(session)}
           onGoMenu={goMenu}
           onLogout={handleLogout}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
       )}
 
       <main>
         {screen === 'login' && (
-          <Login onLogin={handleLogin} />
+          <Login
+            onLogin={handleLogin}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+          />
         )}
 
         {screen === 'menu' && session && (

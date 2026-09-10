@@ -1,3 +1,7 @@
+/* =========================================================
+   PAGOCHECK — VUELTO PAGO MÓVIL (DESIGN TOKENS)
+   ========================================================= */
+
 .vuelto-screen {
   display: flex;
   justify-content: center;
@@ -15,11 +19,12 @@
 
 .cedula-row select {
   min-height: 46px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text-primary);
   padding: 0 8px;
+  transition: var(--transition-theme);
 }
 
 .amount-mode {
@@ -30,20 +35,22 @@
 
 .amount-mode button {
   min-height: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: var(--transition-theme);
 }
 
 .amount-mode button.active {
-  border-color: rgba(119, 176, 170, 0.45);
-  background: rgba(119, 176, 170, 0.16);
-  color: var(--text);
+  border-color: var(--badge-border);
+  background: var(--badge-bg);
+  color: var(--badge-text);
 }
+
 .rate-note {
   margin: -8px 0 8px;
   color: var(--text-muted);

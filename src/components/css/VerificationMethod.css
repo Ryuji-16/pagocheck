@@ -1,19 +1,15 @@
 /* =========================================================
-   VERIFICATION METHOD — MODAL
+   VERIFICATION METHOD — MODAL (DESIGN TOKENS)
    ========================================================= */
 
 .verification-overlay {
   position: relative;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 0;
-
   background: transparent;
 }
-
 
 /* =========================================================
    MODAL
@@ -21,26 +17,16 @@
 
 .verification-method {
   width: min(760px, 100%);
-
   padding: 42px 44px 44px;
-
   text-align: center;
-
-  background: rgba(8, 16, 18, 0.48);
-
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  border-radius: 24px;
-
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.38);
-
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
   animation: verificationModalIn 0.25s ease-out;
+  transition: var(--transition-theme);
 }
-
 
 /* =========================================================
    ICONO PRINCIPAL
@@ -49,23 +35,18 @@
 .verification-method .upload-icon {
   width: 72px;
   height: 72px;
-
   margin: 0 auto 20px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 20px;
-
-  background: rgba(227, 254, 247, 0.95);
-
+  border-radius: var(--radius-lg);
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1px solid var(--badge-border);
   font-size: 34px;
-
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-theme);
 }
-
 
 /* =========================================================
    TÍTULO
@@ -73,14 +54,11 @@
 
 .verification-method h2 {
   margin: 0 0 8px;
-
-  color: var(--text);
-
+  color: var(--text-primary);
   font-size: 27px;
   font-weight: 700;
   letter-spacing: -0.4px;
 }
-
 
 /* =========================================================
    DESCRIPCIÓN
@@ -88,12 +66,9 @@
 
 .verification-method > p {
   margin: 0 0 30px;
-
   color: var(--text-secondary);
-
   font-size: 15px;
 }
-
 
 /* =========================================================
    OPCIONES
@@ -101,14 +76,10 @@
 
 .verification-method-options {
   display: grid;
-
   grid-template-columns: repeat(2, minmax(0, 1fr));
-
   gap: 18px;
-
   width: 100%;
 }
-
 
 /* =========================================================
    TARJETAS
@@ -116,47 +87,28 @@
 
 .verification-method-card {
   position: relative;
-
   min-height: 220px;
-
   padding: 28px 24px 42px;
-
-  border: 1px solid rgba(119, 176, 170, 0.25);
-
-  border-radius: 18px;
-
-  background: rgba(255, 255, 255, 0.055);
-
-  color: var(--text);
-
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
   text-align: center;
-
   cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: var(--transition-theme);
 }
-
 
 .verification-method-card:hover {
   transform: translateY(-3px);
-
-  border-color: rgba(119, 176, 170, 0.55);
-
-  background: rgba(119, 176, 170, 0.10);
-
-  box-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.18);
+  border-color: var(--card-border-strong);
+  background: var(--card-hover);
+  box-shadow: var(--shadow-card);
 }
-
 
 .verification-method-card:active {
   transform: translateY(-1px);
 }
-
 
 /* =========================================================
    ICONOS DE MÉTODO
@@ -165,23 +117,18 @@
 .method-icon {
   width: 58px;
   height: 58px;
-
   margin: 0 auto 16px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 15px;
-
-  background: rgba(227, 254, 247, 0.95);
-
+  border-radius: var(--radius-md);
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1px solid var(--badge-border);
   font-size: 28px;
-
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-theme);
 }
-
 
 /* =========================================================
    TÍTULO DE TARJETA
@@ -189,13 +136,10 @@
 
 .verification-method-card h3 {
   margin: 0 0 8px;
-
-  color: var(--text);
-
+  color: var(--text-primary);
   font-size: 17px;
   font-weight: 700;
 }
-
 
 /* =========================================================
    DESCRIPCIÓN DE TARJETA
@@ -203,15 +147,11 @@
 
 .verification-method-card p {
   max-width: 250px;
-
   margin: 0 auto;
-
   color: var(--text-secondary);
-
   font-size: 13px;
   line-height: 1.5;
 }
-
 
 /* =========================================================
    FLECHA
@@ -219,27 +159,18 @@
 
 .method-arrow {
   position: absolute;
-
   right: 18px;
   bottom: 14px;
-
-  color: var(--secondary);
-
+  color: var(--primary);
   font-size: 22px;
   font-weight: 400;
-
-  transition:
-    transform 0.2s ease,
-    color 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
-
 
 .verification-method-card:hover .method-arrow {
-  color: var(--accent-light);
-
+  color: var(--primary-hover);
   transform: translateX(4px);
 }
-
 
 /* =========================================================
    ANIMACIÓN
@@ -250,13 +181,11 @@
     opacity: 0;
     transform: translateY(8px) scale(0.98);
   }
-
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
-
 
 /* =========================================================
    RESPONSIVE

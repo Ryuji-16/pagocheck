@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { getDemoAccounts, login, isRemoteAuthEnabled } from '../services/authService'
 import './css/Login.css'
 
-function Login({ onLogin }) {
+function Login({ onLogin, theme: propTheme, onToggleTheme }) {
   const accounts = getDemoAccounts()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -11,15 +11,21 @@ function Login({ onLogin }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [highlightInput, setHighlightInput] = useState(false)
-  const [theme, setTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
+  const [localTheme, setLocalTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
   const toastTimerRef = useRef(null)
 
   const isRemote = isRemoteAuthEnabled()
+  const theme = propTheme || localTheme
 
   function toggleTheme() {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(nextTheme)
-    localStorage.setItem('pagocheck-theme', nextTheme)
+    if (onToggleTheme) {
+      onToggleTheme()
+    } else {
+      const nextTheme = theme === 'dark' ? 'light' : 'dark'
+      setLocalTheme(nextTheme)
+      localStorage.setItem('pagocheck-theme', nextTheme)
+      document.documentElement.setAttribute('data-theme', nextTheme)
+    }
   }
 
   useEffect(() => {

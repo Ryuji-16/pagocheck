@@ -1,6 +1,6 @@
 import './css/Header.css'
 
-function Header({ loggedIn, onGoMenu, onLogout }) {
+function Header({ loggedIn, onGoMenu, onLogout, theme, onToggleTheme }) {
   return (
     <header className="app-header">
       <div className="header-content">
@@ -16,6 +16,17 @@ function Header({ loggedIn, onGoMenu, onLogout }) {
         </button>
 
         <div className="header-actions">
+          <button
+            type="button"
+            className="header-theme-toggle"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            aria-label="Cambiar tema"
+          >
+            <span className="header-theme-icon">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <span className="header-theme-text">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
+          </button>
+
           <div className="header-status">
             <span className="status-dot"></span>
             Modo demo

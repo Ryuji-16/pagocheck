@@ -1,12 +1,11 @@
 /* =========================================================
-   UPLOAD ZONE
+   UPLOAD ZONE (DESIGN TOKENS)
    ========================================================= */
 
 .upload-zone {
   position: relative;
   width: 100%;
 }
-
 
 /* =========================================================
    BOTONES DE CARGA
@@ -16,12 +15,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   gap: 12px;
-
   margin-top: 30px;
 }
-
 
 /* =========================================================
    SELECCIONAR ARCHIVO
@@ -31,42 +27,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-width: 170px;
-
   padding: 12px 18px;
-
-  border: 1px solid rgba(119, 176, 170, 0.32);
-
-  border-radius: 12px;
-
+  border: 1px solid var(--primary-hover);
+  border-radius: var(--radius-sm);
   background: var(--primary);
-
-  color: var(--text);
-
+  color: var(--on-primary);
   font-size: 14px;
-  font-weight: 600;
-
+  font-weight: 700;
   cursor: pointer;
-
-  box-shadow:
-    0 8px 20px rgba(19, 93, 102, 0.25);
-
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 229, 163, 0.2);
+  transition: var(--transition-theme);
 }
 
 .upload-button:hover {
   transform: translateY(-2px);
-
-  background: var(--primary-dark);
-
-  box-shadow:
-    0 12px 26px rgba(19, 93, 102, 0.32);
+  background: var(--primary-hover);
 }
-
 
 /* =========================================================
    PEGAR
@@ -76,38 +53,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-width: 110px;
-
   padding: 12px 18px;
-
-  border: 1px solid rgba(119, 176, 170, 0.25);
-
-  border-radius: 12px;
-
-  background: rgba(255, 255, 255, 0.06);
-
-  color: var(--text);
-
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
-
   cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
+  transition: var(--transition-theme);
 }
 
 .paste-button:hover {
   transform: translateY(-2px);
-
-  background: rgba(119, 176, 170, 0.12);
-
-  border-color: rgba(119, 176, 170, 0.42);
+  background: var(--card-hover);
+  border-color: var(--card-border-strong);
 }
-
 
 /* =========================================================
    PREVIEW
@@ -115,44 +77,29 @@
 
 .preview-container {
   margin-top: 28px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-
-/* =========================================================
-   IMAGEN PREVIEW
-   ========================================================= */
-
 .preview-image {
   width: min(420px, 100%);
-
   max-height: 420px;
-
   padding: 8px;
-
   overflow: hidden;
-
-  border: 1px solid rgba(119, 176, 170, 0.22);
-
-  border-radius: 16px;
-
-  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--input-bg);
+  transition: var(--transition-theme);
 }
 
 .preview-image img {
   display: block;
-
   width: 100%;
   max-height: 400px;
-
   object-fit: contain;
-
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
-
 
 /* =========================================================
    NOMBRE DEL ARCHIVO
@@ -160,20 +107,13 @@
 
 .file-name {
   max-width: 100%;
-
   margin: 12px 0 0;
-
   overflow: hidden;
-
   color: var(--text-secondary);
-
   font-size: 12px;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
-
 
 /* =========================================================
    CAMBIAR IMAGEN
@@ -181,31 +121,20 @@
 
 .change-button {
   margin-top: 14px;
-
-  padding: 8px 13px;
-
-  border: none;
-  border-radius: 9px;
-
-  background: rgba(255, 255, 255, 0.06);
-
-  color: var(--text-secondary);
-
+  padding: 7px 14px;
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-sm);
+  background: var(--badge-bg);
+  color: var(--badge-text);
   font-size: 13px;
-
+  font-weight: 600;
   cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: var(--transition-theme);
 }
 
 .change-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-
-  color: var(--text);
+  filter: brightness(1.1);
 }
-
 
 /* =========================================================
    VERIFICAR
@@ -213,48 +142,28 @@
 
 .verify-button {
   width: min(300px, 100%);
-
   margin-top: 14px;
-
   padding: 13px 18px;
-
-  border: none;
-
-  border-radius: 12px;
-
+  border: 1px solid var(--primary-hover);
+  border-radius: var(--radius-sm);
   background: var(--primary);
-
-  color: var(--text);
-
+  color: var(--on-primary);
   font-size: 14px;
   font-weight: 700;
-
   cursor: pointer;
-
-  box-shadow:
-    0 8px 24px rgba(19, 93, 102, 0.28);
-
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 229, 163, 0.2);
+  transition: var(--transition-theme);
 }
 
 .verify-button:hover:not(:disabled) {
   transform: translateY(-2px);
-
-  background: var(--primary-dark);
-
-  box-shadow:
-    0 12px 30px rgba(19, 93, 102, 0.36);
+  background: var(--primary-hover);
 }
 
 .verify-button:disabled {
   opacity: 0.65;
-
   cursor: wait;
 }
-
 
 /* =========================================================
    RESPONSIVE
@@ -278,84 +187,57 @@
 
 .upload-drop-area {
   width: 100%;
-
   min-height: 260px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   padding: 32px 24px;
-
   box-sizing: border-box;
-
-  border: 2px dashed var(--border);
-  border-radius: 16px;
-
-  background: rgba(255, 255, 255, 0.025);
-
+  border: 2px dashed var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--input-bg);
   text-align: center;
-
-  transition:
-    border-color 0.25s ease,
-    background 0.25s ease,
-    transform 0.25s ease;
+  transition: var(--transition-theme);
 }
 
 .upload-drop-icon {
   font-size: 42px;
-
   margin-bottom: 14px;
 }
 
 .upload-drop-area h3 {
   margin: 0 0 8px;
-
-  color: var(--text);
-
+  color: var(--text-primary);
   font-size: 18px;
 }
 
 .upload-drop-area p {
   max-width: 360px;
-
   margin: 0 0 24px;
-
-  color: var(--text-muted);
-
+  color: var(--text-secondary);
   font-size: 14px;
-
   line-height: 1.5;
 }
 
 .upload-drop-area .upload-actions {
   display: flex;
-
   gap: 12px;
-
   justify-content: center;
-
   width: 100%;
 }
 
 .upload-shortcut {
   margin-top: 20px;
-
   color: var(--text-muted);
-
   font-size: 12px;
 }
 
 .upload-shortcut strong {
-  padding: 3px 7px;
-
+  padding: 3px 8px;
   margin-left: 4px;
-
-  border: 1px solid var(--border);
-  border-radius: 5px;
-
-  background: rgba(255, 255, 255, 0.05);
-
-  color: var(--text);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xs);
+  background: var(--card-hover);
+  color: var(--text-primary);
 }

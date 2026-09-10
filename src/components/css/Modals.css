@@ -1,7 +1,6 @@
 /* =========================================================
-   MODALES — ESTRUCTURA COMPARTIDA
+   MODALES — ESTRUCTURA COMPARTIDA (DESIGN TOKENS)
    ========================================================= */
-
 
 /* =========================================================
    FONDO DEL MODAL
@@ -10,23 +9,16 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-
   z-index: 200;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 112px 24px 28px;
-
   background: transparent;
-
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-
   animation: modalOverlayIn 0.22s ease;
 }
-
 
 /* =========================================================
    CONTENEDOR DEL MODAL
@@ -34,29 +26,19 @@
 
 .modal {
   position: relative;
-
   width: min(650px, 100%);
-
   padding: 30px 34px 34px;
-
-  background: #101618;
-
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  border-radius: 24px;
-
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-
   text-align: center;
-
   animation: modalIn 0.28s ease;
+  transition: var(--transition-theme);
 }
-
 
 /* =========================================================
    BOTÓN VOLVER
@@ -66,34 +48,21 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-
   margin-bottom: 18px;
-
-  padding: 7px 11px;
-
-  border: none;
-  border-radius: 9px;
-
-  background: transparent;
-
-  color: var(--text-secondary);
-
+  padding: 6px 12px;
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-sm);
+  background: var(--badge-bg);
+  color: var(--badge-text);
   font-size: 13px;
-  font-weight: 500;
-
+  font-weight: 600;
   cursor: pointer;
-
-  transition:
-    color 0.2s ease,
-    background 0.2s ease;
+  transition: var(--transition-theme);
 }
 
 .modal-back-button:hover {
-  color: var(--text);
-
-  background: rgba(255, 255, 255, 0.06);
+  filter: brightness(1.1);
 }
-
 
 /* =========================================================
    CABECERA
@@ -103,7 +72,6 @@
   text-align: center;
 }
 
-
 /* =========================================================
    ICONO
    ========================================================= */
@@ -111,23 +79,18 @@
 .modal-icon {
   width: 72px;
   height: 72px;
-
   margin: 0 auto 18px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 20px;
-
-  background: rgba(227, 254, 247, 0.95);
-
+  border-radius: var(--radius-lg);
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1px solid var(--badge-border);
   font-size: 34px;
-
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-theme);
 }
-
 
 /* =========================================================
    TÍTULO
@@ -135,13 +98,10 @@
 
 .modal-title {
   margin: 0 0 8px;
-
-  color: var(--text);
-
+  color: var(--text-primary);
   font-size: 25px;
   font-weight: 700;
 }
-
 
 /* =========================================================
    DESCRIPCIÓN
@@ -149,13 +109,10 @@
 
 .modal-description {
   margin: 0;
-
   color: var(--text-secondary);
-
   font-size: 14px;
   line-height: 1.5;
 }
-
 
 /* =========================================================
    ANIMACIONES
@@ -165,7 +122,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -176,13 +132,11 @@
     opacity: 0;
     transform: translateY(12px) scale(0.98);
   }
-
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
-
 
 /* =========================================================
    RESPONSIVE
@@ -191,30 +145,22 @@
 @media (max-width: 600px) {
   .modal-overlay {
     align-items: center;
-
     padding: 108px 14px 28px;
-
     overflow-y: auto;
   }
 
   .modal {
     width: 100%;
-
     margin: 0 auto;
-
     padding: 20px 16px 22px;
-
-    border-radius: 20px;
-
+    border-radius: var(--radius-lg);
     overflow: visible;
   }
 
   .modal-icon {
     width: 56px;
     height: 56px;
-
     margin-bottom: 14px;
-
     font-size: 26px;
   }
 
@@ -233,11 +179,11 @@
 
 .form-error {
   margin: 0 0 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(201, 74, 74, 0.16);
-  border: 1px solid rgba(201, 74, 74, 0.35);
-  color: #f3c1c1;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  color: var(--status-error-text);
   font-size: 14px;
   line-height: 1.45;
   text-align: left;
