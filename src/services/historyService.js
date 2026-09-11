@@ -6,7 +6,8 @@ const HISTORY_KEY = 'pagocheck-movements'
 function readAllLocal() {
   try {
     const raw = localStorage.getItem(HISTORY_KEY)
-    return raw ? JSON.parse(raw) : []
+    const list = raw ? JSON.parse(raw) : []
+    return list.filter((item) => item.username !== 'demo')
   } catch {
     return []
   }
@@ -33,8 +34,8 @@ function toListItem(row) {
 export async function saveMovement(entry) {
   const session = getSession()
   const item = {
-    username: session?.username || 'demo',
-    label: session?.label || session?.username || 'demo',
+    username: session?.username || 'caja1',
+    label: session?.label || session?.username || 'Caja 1',
     type: entry.type,
     status: entry.status || 'ok',
     amount: entry.amount || '',

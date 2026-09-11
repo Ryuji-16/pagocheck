@@ -4,7 +4,6 @@ const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
 
 const DEFAULT_USERS = {
-  demo: { password: 'pagocheck', role: 'caja', label: 'Prueba', subtitle: 'Cuenta demo general', icon: 'science' },
   caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
   caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
   caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
@@ -44,6 +43,12 @@ function readLocalUsers() {
     stored = {}
   }
 
+  // Eliminar usuario demo si existía previamente en almacenamiento local
+  if (stored.demo) {
+    delete stored.demo
+    localStorage.setItem(USERS_KEY, JSON.stringify(stored))
+  }
+
   const users = {}
 
   for (const [username, meta] of Object.entries(DEFAULT_USERS)) {
@@ -80,7 +85,12 @@ export function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    if (parsed?.username === 'demo') {
+      localStorage.removeItem(SESSION_KEY)
+      return null
+    }
+    return parsed
   } catch {
     return null
   }
@@ -90,12 +100,32 @@ function writeSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
 }
 
+export async function purgeRemoteDemoUser() {
+  if (isRemoteDbEnabled()) {
+    try {
+      await remoteRequest('app_users?username=eq.demo', { method: 'DELETE' })
+      await remoteRequest('movements?username=eq.demo', { method: 'DELETE' })
+    } catch {
+      // Manejo silencioso si la base no está conectada
+    }
+  }
+}
+
+// Ejecutar limpieza remota de cuenta demo al inicializar
+if (isRemoteDbEnabled()) {
+  purgeRemoteDemoUser()
+}
+
 export async function login(username, password) {
   const name = String(username || '').trim()
   const pass = String(password || '')
 
   if (!name || !pass) {
     return { ok: false, message: 'Escribe usuario y clave.' }
+  }
+
+  if (name === 'demo') {
+    return { ok: false, message: 'El usuario demo ha sido eliminado del sistema.' }
   }
 
   if (isRemoteDbEnabled()) {

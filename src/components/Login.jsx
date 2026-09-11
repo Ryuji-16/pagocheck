@@ -139,7 +139,7 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
               </div>
               <h1 className="login-card-title">Iniciar sesión</h1>
               <p className="login-card-subtitle">
-                Usuarios de prueba. Si la base está conectada, las tres cajas comparten la misma cuenta.
+                Acceso a terminales de caja y administración del sistema.
               </p>
             </div>
 
@@ -238,12 +238,12 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
 
           </div>
 
-          {/* Columna Derecha: Cuentas Demo Preconfiguradas */}
+          {/* Columna Derecha: Terminales Preconfiguradas */}
           <div className="login-card-right">
             <div className="login-accounts-header">
               <div className="login-accounts-title">
                 <span className="material-symbols-outlined">touch_app</span>
-                <h2>Cuentas Demo Preconfiguradas</h2>
+                <h2>Terminales Preconfiguradas</h2>
               </div>
               <span className="login-autofill-hint">Clic para autorellenar</span>
             </div>

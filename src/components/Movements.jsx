@@ -258,8 +258,8 @@ function Movements({ session, onBack }) {
         </div>
       )}
 
-      {/* Control Financiero y Arqueo Consolidado en tiempo real */}
-      <MovementsSummary items={summaryItems} />
+      {/* Control Financiero y Arqueo Consolidado en tiempo real (solo visible para Administrador) */}
+      {isAdmin && <MovementsSummary items={summaryItems} />}
 
       {/* 4. Pestañas superiores (Todas | Validaciones | Vueltos) */}
       <MovementsTabs

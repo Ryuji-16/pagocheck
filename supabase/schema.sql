@@ -46,9 +46,13 @@ create policy movements_insert on public.movements
   for insert to anon with check (true);
 
 insert into public.app_users (username, password_hash, role, label) values
-  ('demo',  'a814881dabd0110183e7e0c8b18e025be9d42425faad5fb9c095c05ce6463ae0', 'caja',  'Prueba'),
   ('caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1'),
   ('caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2'),
   ('caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3'),
   ('admin', '2cafd21f5b0069e302c5f1f48def2dc1a08d01a7154a6e762ba9a901cafa4cf4', 'admin', 'Admin de tienda')
 on conflict (username) do nothing;
+
+-- Eliminar usuario demo y sus movimientos si existían
+delete from public.app_users where username = 'demo';
+delete from public.movements where username = 'demo';
+
