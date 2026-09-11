@@ -191,21 +191,24 @@
   background: var(--primary);
 }
 
-/* Botones de acción */
+/* Botones de acción táctil */
 .receipt-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin-top: 6px;
 }
 
-.receipt-copy-btn {
-  width: 100%;
+.receipt-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 12px;
+}
+
+.receipt-whatsapp-btn {
   min-height: 44px;
   border-radius: var(--radius-sm, 8px);
-  border: 1px solid var(--primary-hover);
-  background: var(--primary);
-  color: var(--on-primary);
-  font-size: 14px;
+  border: 1px solid #1fa855;
+  background: #25d366;
+  color: #ffffff;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -213,37 +216,54 @@
   justify-content: center;
   gap: 8px;
   transition: var(--transition-theme);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+  user-select: none;
 }
 
-.receipt-copy-btn:hover {
-  background: var(--primary-hover);
+.receipt-whatsapp-btn:hover {
+  background: #20ba59;
+  border-color: #1a9c4b;
+  transform: translateY(-1px);
 }
 
-.receipt-copy-btn.copied {
-  background: var(--badge-bg);
-  border-color: var(--primary);
-  color: var(--primary);
+.receipt-whatsapp-btn:active {
+  transform: translateY(0);
 }
 
-.receipt-secondary-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.receipt-whatsapp-icon {
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-.receipt-secondary-btn {
-  min-height: 40px;
+.receipt-new-btn {
+  min-height: 44px;
   border-radius: var(--radius-sm, 8px);
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px solid var(--primary-hover);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: var(--transition-theme);
+  user-select: none;
 }
 
-.receipt-secondary-btn:hover {
-  background: var(--tag-bg, var(--screen-bg));
-  border-color: var(--card-border-strong);
+.receipt-new-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.receipt-new-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 420px) {
+  .receipt-actions-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }

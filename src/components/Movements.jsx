@@ -7,6 +7,7 @@ import MovementsToolbar from './MovementsToolbar'
 import MovementsTable from './MovementsTable'
 import MovementsPagination from './MovementsPagination'
 import MovementsSummary from './MovementsSummary'
+import ReceiptViewerModal from './ReceiptViewerModal'
 import './css/Movements.css'
 import './css/MovementsToolbar.css'
 import './css/MovementsTable.css'
@@ -25,6 +26,7 @@ function Movements({ session, onBack }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [exporting, setExporting] = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const [selectedReceipt, setSelectedReceipt] = useState(null)
 
   const isAdmin = session?.role === 'admin'
 
@@ -296,12 +298,13 @@ function Movements({ session, onBack }) {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* 6. Tabla de datos (8 columnas, ordenable y con referencia) */}
+      {/* 6. Tabla de datos (con ordenamiento, referencia y visor de recibo) */}
       <MovementsTable
         items={paginatedItems}
         sortField={sortField}
         sortOrder={sortOrder}
         onSortChange={handleSortChange}
+        onViewReceipt={setSelectedReceipt}
         emptyMessage={
           items.length === 0
             ? 'Aún no hay movimientos registrados.'
@@ -321,6 +324,14 @@ function Movements({ session, onBack }) {
             setCurrentPage(1)
           }}
           totalItems={filteredItems.length}
+        />
+      )}
+
+      {/* 8. Modal visor táctil de comprobante auditado (El "Ojo") */}
+      {selectedReceipt && (
+        <ReceiptViewerModal
+          item={selectedReceipt}
+          onClose={() => setSelectedReceipt(null)}
         />
       )}
     </section>

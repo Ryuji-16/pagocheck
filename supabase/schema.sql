@@ -20,8 +20,11 @@ create table if not exists public.movements (
   phone text,
   bank text,
   cedula text,
-  note text
+  note text,
+  receipt_image text
 );
+
+alter table public.movements add column if not exists receipt_image text;
 
 alter table public.app_users enable row level security;
 alter table public.movements enable row level security;

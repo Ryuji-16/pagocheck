@@ -5,12 +5,14 @@ import ManualVerification from './ManualVerification'
 import { verifyPayment } from "../services/verificationService";
 import { saveMovement } from '../services/historyService'
 import { extractPaymentData } from "../services/ocrService";
+import { compressImageToDataUrl } from '../utils/imageUtils'
 import './css/UploadZone.css'
 import './css/Modals.css'
 
 function UploadZone({ onBack }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [receiptImage, setReceiptImage] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [verificationResult, setVerificationResult] = useState(null)
@@ -38,6 +40,11 @@ function UploadZone({ onBack }) {
       setVerificationResult(null)
       setOcrData(null)
       setExtractError('')
+
+      // Comprimir en segundo plano para el comprobante auditado
+      compressImageToDataUrl(selectedFile, 900, 900, 0.75).then((compressed) => {
+        setReceiptImage(compressed)
+      })
     }
   }
 
@@ -94,7 +101,8 @@ function UploadZone({ onBack }) {
       amount: result.amount || '',
       reference: result.reference || data.reference || '',
       phone: result.phone || data.phone || '',
-      bank: result.bank || data.bank || ''
+      bank: result.bank || data.bank || '',
+      receipt_image: receiptImage || ''
     })
     setVerificationResult(result)
   } catch (error) {
@@ -180,6 +188,7 @@ function UploadZone({ onBack }) {
     setVerificationMethod(null)
     setFile(null)
     setPreview(null)
+    setReceiptImage('')
     setVerificationResult(null)
     setOcrData(null)
     setExtractError('')

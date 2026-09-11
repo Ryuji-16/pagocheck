@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { findMovementByReference } from '../services/historyService'
 import BankSelect from './BankSelect'
+import DuplicateWarningModal from './DuplicateWarningModal'
 import './css/ManualVerification.css'
 import './css/Modals.css'
 
@@ -27,26 +28,32 @@ function isValidDisplayDate(value) {
   )
 }
 
-function formatWhen(value) {
-  try {
-    return new Date(value).toLocaleString('es-VE', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return value || ''
-  }
-}
-
 function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialValues = {} }) {
   const [date, setDate] = useState(initialValues.date || formatToday)
   const [reference, setReference] = useState(initialValues.reference || '')
   const [phone, setPhone] = useState(initialValues.phone || '')
   const [bank, setBank] = useState(initialValues.bank || '')
   const [formError, setFormError] = useState('')
+  const [duplicateAlert, setDuplicateAlert] = useState(null)
   const fromOcr = Boolean(initialValues.source === 'ocr')
+
+  function triggerVerification() {
+    onVerify({
+      date: date.trim(),
+      reference: reference.trim(),
+      phone: phone.trim(),
+      bank
+    })
+  }
+
+  function handleProceedAnyway() {
+    setDuplicateAlert(null)
+    triggerVerification()
+  }
+
+  function handleReview() {
+    setDuplicateAlert(null)
+  }
 
   async function handleSubmit() {
     if (isVerifying) return
@@ -76,19 +83,11 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
     // Comprobación anti-fraude: referencia duplicada
     const duplicate = await findMovementByReference(reference.trim(), bank)
     if (duplicate) {
-      const when = formatWhen(duplicate.at)
-      setFormError(
-        `⚠️ ¡Alerta de seguridad! Esta referencia ya fue registrada en ${duplicate.label || duplicate.username} el ${when}${duplicate.amount ? ` por ${duplicate.amount}` : ''}.`
-      )
+      setDuplicateAlert(duplicate)
       return
     }
 
-    onVerify({
-      date: date.trim(),
-      reference: reference.trim(),
-      phone: phone.trim(),
-      bank
-    })
+    triggerVerification()
   }
 
   return (
@@ -190,6 +189,14 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
           {isVerifying ? '🔄Verificando...' : '✓ Verificar pago'}
         </button>
       </div>
+
+      {duplicateAlert && (
+        <DuplicateWarningModal
+          duplicate={duplicateAlert}
+          onReview={handleReview}
+          onProceed={handleProceedAnyway}
+        />
+      )}
     </div>
   )
 }

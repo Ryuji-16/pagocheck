@@ -27,6 +27,7 @@ function MovementsTable({
   sortField,
   sortOrder,
   onSortChange,
+  onViewReceipt,
   emptyMessage = 'No hay movimientos para mostrar.'
 }) {
   const [copiedId, setCopiedId] = useState(null)
@@ -89,6 +90,7 @@ function MovementsTable({
               </th>
               <th className="th-estado">ESTADO</th>
               <th className="th-referencia">REFERENCIA</th>
+              <th className="th-recibo">RECIBO</th>
             </tr>
           </thead>
           <tbody>
@@ -174,6 +176,23 @@ function MovementsTable({
                         </span>
                       )}
                     </button>
+                  </td>
+
+                  {/* RECIBO AUDITADO (El "Ojo") */}
+                  <td className="td-recibo">
+                    {item.receipt_image ? (
+                      <button
+                        type="button"
+                        className="receipt-eye-btn"
+                        onClick={() => onViewReceipt && onViewReceipt(item)}
+                        title="Ver comprobante original"
+                        aria-label={`Ver comprobante original de referencia ${refNumber}`}
+                      >
+                        👁️
+                      </button>
+                    ) : (
+                      <span className="no-receipt-dash">-</span>
+                    )}
                   </td>
                 </tr>
               )

@@ -25,7 +25,8 @@ function toListItem(row) {
     phone: row.phone || '',
     bank: row.bank || '',
     cedula: row.cedula || '',
-    note: row.note || ''
+    note: row.note || '',
+    receipt_image: row.receipt_image || row.image || ''
   }
 }
 
@@ -41,15 +42,29 @@ export async function saveMovement(entry) {
     phone: entry.phone || '',
     bank: entry.bank || '',
     cedula: entry.cedula || '',
-    note: entry.note || ''
+    note: entry.note || '',
+    receipt_image: entry.receipt_image || ''
   }
 
   if (isRemoteDbEnabled()) {
-    const { data, error } = await remoteRequest('movements', {
+    let { data, error } = await remoteRequest('movements', {
       method: 'POST',
       body: item,
       prefer: 'return=representation'
     })
+
+    // Fallback si la columna receipt_image aún no existe en Supabase
+    if (error && item.receipt_image) {
+      const fallbackItem = { ...item }
+      delete fallbackItem.receipt_image
+      const retryResult = await remoteRequest('movements', {
+        method: 'POST',
+        body: fallbackItem,
+        prefer: 'return=representation'
+      })
+      data = retryResult.data
+      error = retryResult.error
+    }
 
     if (error) {
       console.error('No se pudo guardar el movimiento remoto', error)
@@ -57,6 +72,9 @@ export async function saveMovement(entry) {
     }
 
     const row = Array.isArray(data) ? data[0] : data
+    if (row && item.receipt_image && !row.receipt_image) {
+      row.receipt_image = item.receipt_image
+    }
     return row ? toListItem(row) : null
   }
 
@@ -78,9 +96,19 @@ export async function listMovements(session) {
       session.role === 'admin'
         ? ''
         : `&username=eq.${encodeURIComponent(session.username)}`
-    const { data, error } = await remoteRequest(
-      `movements?select=id,created_at,username,label,type,status,amount,reference,phone,bank,cedula,note${filter}&order=created_at.desc&limit=200`
+
+    let { data, error } = await remoteRequest(
+      `movements?select=id,created_at,username,label,type,status,amount,reference,phone,bank,cedula,note,receipt_image${filter}&order=created_at.desc&limit=200`
     )
+
+    // Fallback si la columna receipt_image aún no fue creada en la base remota
+    if (error) {
+      const fallback = await remoteRequest(
+        `movements?select=id,created_at,username,label,type,status,amount,reference,phone,bank,cedula,note${filter}&order=created_at.desc&limit=200`
+      )
+      data = fallback.data
+      error = fallback.error
+    }
 
     if (error) {
       console.error('No se pudieron leer los movimientos', error)
