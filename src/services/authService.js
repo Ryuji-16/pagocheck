@@ -8,18 +8,18 @@ const tenantConfig = getTenantConfig()
 const botConfig = tenantConfig.bot || {}
 
 const DEFAULT_USERS = {
-  // Tienda 1 - Centro
-  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
-  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
-  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
-  // Tienda 2 - Norte
-  t2_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
-  t2_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
-  t2_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Rápida', icon: 'local_bar' },
-  // Tienda 3 - Sur
-  t3_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
-  t3_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
-  t3_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  // Tienda 1 (Bella Vista)
+  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
+  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
+  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
+  // Tienda 2 (Altamira)
+  t2_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t2_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t2_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  // Tienda 3 (La Trinidad)
+  t3_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t3_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t3_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
   // Camión Móvil
   camion_caja1: { password: 'camion', role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping' },
   // Servicios / Bot (WhatsApp / Delivery)

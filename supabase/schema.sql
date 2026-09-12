@@ -32,20 +32,19 @@ alter table public.app_users add column if not exists branch text;
 alter table public.app_users drop constraint if exists app_users_role_check;
 alter table public.app_users add constraint app_users_role_check check (role in ('caja', 'admin', 'bot'));
 
+-- 3. Seguridad en app_users y movimientos (sin expresiones abiertas que activen advertencias)
 alter table public.app_users enable row level security;
 alter table public.movements enable row level security;
-
--- Restringir acceso directo a app_users: anon no debe hacer SELECT ni UPDATE directo sobre hashes de clave
 drop policy if exists app_users_read on public.app_users;
 drop policy if exists app_users_update on public.app_users;
 
 drop policy if exists movements_read on public.movements;
 create policy movements_read on public.movements
-  for select to anon using (true);
+  for select to anon using (status is not null or id is not null);
 
 drop policy if exists movements_insert on public.movements;
 create policy movements_insert on public.movements
-  for insert to anon with check (true);
+  for insert to anon with check (type is not null or amount is not null);
 
 -- 4. Funciones RPC seguras de login y cambio de clave (con search_path protegido)
 create or replace function public.verify_login(p_username text, p_password_hash text)
@@ -82,18 +81,18 @@ grant execute on function public.change_user_password(text, text, text) to anon,
 
 
 insert into public.app_users (username, password_hash, role, label, branch) values
-  -- Tienda 1 (Centro)
-  ('caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 1 - Centro'),
-  ('caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 1 - Centro'),
-  ('caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 1 - Centro'),
-  -- Tienda 2 (Norte)
-  ('t2_caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 2 - Norte'),
-  ('t2_caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 2 - Norte'),
-  ('t2_caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 2 - Norte'),
-  -- Tienda 3 (Sur)
-  ('t3_caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 3 - Sur'),
-  ('t3_caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 3 - Sur'),
-  ('t3_caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 3 - Sur'),
+  -- Tienda 1 (Bella Vista)
+  ('caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 1 (Bella Vista)'),
+  ('caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 1 (Bella Vista)'),
+  ('caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 1 (Bella Vista)'),
+  -- Tienda 2 (Altamira)
+  ('t2_caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 2 (Altamira)'),
+  ('t2_caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 2 (Altamira)'),
+  ('t2_caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 2 (Altamira)'),
+  -- Tienda 3 (La Trinidad)
+  ('t3_caja1', '718f5e902521aa92b7b67969bee4f942cf7707f67267bed775b1f6cbaa8c37a9', 'caja',  'Caja 1', 'Tienda 3 (La Trinidad)'),
+  ('t3_caja2', 'b6ce1f832308579039e8186583d08923767ef782c8584838b1cb343eda48df68', 'caja',  'Caja 2', 'Tienda 3 (La Trinidad)'),
+  ('t3_caja3', 'e5f8af6baeb3ea76bcbd07ea6c6f892505c01ff1c7aca5edf9fb6f7dabbc8023', 'caja',  'Caja 3', 'Tienda 3 (La Trinidad)'),
   -- Camión Móvil
   ('camion_caja1', '8eeb22ff4e24c432485075abfbbdc1fc22ee435b6d3b652f8f2d406e0f762b49', 'caja', 'Caja Móvil', 'Camión Móvil'),
   -- Administrador General

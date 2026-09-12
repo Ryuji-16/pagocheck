@@ -49,9 +49,9 @@ function Movements({ session, onBack }) {
       if (item.branch) set.add(item.branch)
     }
     const defaultBranches = [
-      'Tienda 1 - Centro',
-      'Tienda 2 - Norte',
-      'Tienda 3 - Sur',
+      'Tienda 1 (Bella Vista)',
+      'Tienda 2 (Altamira)',
+      'Tienda 3 (La Trinidad)',
       'Camión Móvil'
     ]
     for (const b of defaultBranches) {
