@@ -122,9 +122,14 @@ function MovementsTable({
 
                   {/* CAJA / TERMINAL */}
                   <td className="td-caja">
-                    <span className="terminal-pill">
-                      {item.label || item.username || 'Caja'}
-                    </span>
+                    <div className="terminal-cell">
+                      {item.branch && (
+                        <span className="branch-pill">📍 {item.branch}</span>
+                      )}
+                      <span className="terminal-pill">
+                        {item.label || item.username || 'Caja'}
+                      </span>
+                    </div>
                   </td>
 
                   {/* BANCO / ENTIDAD */}
@@ -178,9 +183,20 @@ function MovementsTable({
                     </button>
                   </td>
 
-                  {/* RECIBO AUDITADO (El "Ojo") */}
+                  {/* RECIBO AUDITADO (El "Ojo" o Texto auditado) */}
                   <td className="td-recibo">
-                    {item.receipt_image ? (
+                    {item.receipt_image === 'purged' ? (
+                      <button
+                        type="button"
+                        className="receipt-badge-purged"
+                        onClick={() => onViewReceipt && onViewReceipt(item)}
+                        title="Comprobante archivado en texto. Clic para ver datos auditados."
+                        aria-label={`Ver comprobante en texto auditado de referencia ${refNumber}`}
+                      >
+                        <span className="receipt-badge-purged-icon">📄</span>
+                        <span className="receipt-badge-purged-label">Texto auditado</span>
+                      </button>
+                    ) : item.receipt_image ? (
                       <button
                         type="button"
                         className="receipt-eye-btn"

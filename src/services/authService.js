@@ -1,13 +1,38 @@
+import { getTenantConfig } from '../config/tenantConfig'
 import { isRemoteDbEnabled, remoteRequest } from './supabaseClient'
 
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
 
+const tenantConfig = getTenantConfig()
+const botConfig = tenantConfig.bot || {}
+
 const DEFAULT_USERS = {
-  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
-  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
-  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
-  admin: { password: 'admin123', role: 'admin', label: 'Admin de tienda', subtitle: 'Acceso total / Reportes', icon: 'shield_person' }
+  // Tienda 1 - Centro
+  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
+  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
+  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 1 - Centro', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
+  // Tienda 2 - Norte
+  t2_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t2_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t2_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 2 - Norte', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  // Tienda 3 - Sur
+  t3_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t3_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t3_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 3 - Sur', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  // Camión Móvil
+  camion_caja1: { password: 'camion', role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping' },
+  // Servicios / Bot (WhatsApp / Delivery)
+  [botConfig.serviceUsername || 'bot_service']: {
+    password: 'bot',
+    role: 'bot',
+    label: botConfig.serviceLabel || 'Asistente WhatsApp',
+    branch: botConfig.branch || 'WhatsApp / Delivery',
+    subtitle: 'Servicios / Bot',
+    icon: 'smart_toy'
+  },
+  // Administrador General
+  admin: { password: 'admin123', role: 'admin', label: 'Admin General', branch: '', subtitle: 'Consolidado / Reportes', icon: 'shield_person' }
 }
 
 async function hashPassword(password) {
@@ -18,19 +43,21 @@ async function hashPassword(password) {
     .join('')
 }
 
-function toUserRecord(value, fallbackRole = 'caja') {
+function toUserRecord(value, fallbackRole = 'caja', fallbackBranch = '') {
   if (value && typeof value === 'object' && value.password) {
     return {
       password: String(value.password),
       role: value.role || fallbackRole,
-      label: value.label || ''
+      label: value.label || '',
+      branch: value.branch || fallbackBranch
     }
   }
 
   return {
     password: String(value || ''),
     role: fallbackRole,
-    label: ''
+    label: '',
+    branch: fallbackBranch
   }
 }
 
@@ -55,7 +82,8 @@ function readLocalUsers() {
     const saved = stored[username]
     users[username] = {
       ...meta,
-      password: saved ? toUserRecord(saved, meta.role).password : meta.password
+      password: saved ? toUserRecord(saved, meta.role, meta.branch).password : meta.password,
+      branch: meta.branch || ''
     }
   }
 
@@ -73,9 +101,9 @@ export function isRemoteAuthEnabled() {
 export function getDemoAccounts() {
   return Object.entries(DEFAULT_USERS).map(([username, meta]) => ({
     username,
-    password: meta.password,
     role: meta.role,
     label: meta.label,
+    branch: meta.branch || '',
     subtitle: meta.subtitle || '',
     icon: meta.icon || 'account_circle'
   }))
@@ -130,25 +158,28 @@ export async function login(username, password) {
 
   if (isRemoteDbEnabled()) {
     const passwordHash = await hashPassword(pass)
-    const { data, error } = await remoteRequest(
-      `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,password_hash`
-    )
+    const { data, error } = await remoteRequest('rpc/verify_login', {
+      method: 'POST',
+      body: {
+        p_username: name,
+        p_password_hash: passwordHash
+      }
+    })
 
     if (error) {
       return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
     }
 
     const row = Array.isArray(data) ? data[0] : data
-    if (!row || row.password_hash !== passwordHash) {
+    if (!row || !row.username) {
       return { ok: false, message: 'Usuario o clave incorrectos.' }
     }
 
-    const dataUser = row
-
     const session = {
-      username: dataUser.username,
-      role: dataUser.role,
-      label: dataUser.label || dataUser.username
+      username: row.username,
+      role: row.role,
+      label: row.label || row.username,
+      branch: row.branch || ''
     }
     writeSession(session)
     return { ok: true, session }
@@ -164,7 +195,8 @@ export async function login(username, password) {
   const session = {
     username: name,
     role: user.role,
-    label: user.label || name
+    label: user.label || name,
+    branch: user.branch || ''
   }
   writeSession(session)
   return { ok: true, session }
@@ -180,30 +212,23 @@ export async function changePassword(username, currentPassword, nextPassword) {
   }
 
   if (isRemoteDbEnabled()) {
-    const currentHash = await hashPassword(currentPassword)
-    const { data, error } = await remoteRequest(
-      `app_users?username=eq.${encodeURIComponent(username)}&select=username,password_hash,role,label`
-    )
+    const oldHash = await hashPassword(currentPassword)
+    const newHash = await hashPassword(nextPassword)
+    const { data, error } = await remoteRequest('rpc/change_user_password', {
+      method: 'POST',
+      body: {
+        p_username: username,
+        p_old_hash: oldHash,
+        p_new_hash: newHash
+      }
+    })
 
     if (error) {
       return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
     }
 
-    const row = Array.isArray(data) ? data[0] : data
-    if (!row || row.password_hash !== currentHash) {
+    if (!data) {
       return { ok: false, message: 'La clave actual no es correcta.' }
-    }
-
-    const { error: updateError } = await remoteRequest(
-      `app_users?username=eq.${encodeURIComponent(username)}`,
-      {
-        method: 'PATCH',
-        body: { password_hash: await hashPassword(nextPassword) }
-      }
-    )
-
-    if (updateError) {
-      return { ok: false, message: `No se pudo guardar la clave: ${updateError.message}` }
     }
 
     return { ok: true }

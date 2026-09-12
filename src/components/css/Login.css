@@ -1,14 +1,9 @@
 /* =========================================================
-   PAGOCHECK — INICIAR SESIÓN (STITCH POS v3.2 DUAL THEME)
+   PAGOCHECK — INICIAR SESIÓN (STITCH POS v3.2)
    ========================================================= */
 
 /* =========================================================
-   1. VARIABLES DE TEMA
-   (Heredadas automáticamente desde src/styles/variables.css)
-   ========================================================= */
-
-/* =========================================================
-   2. ESTRUCTURA Y CONTENEDOR PRINCIPAL
+   1. ESTRUCTURA Y CONTENEDOR PRINCIPAL
    ========================================================= */
 
 .login-screen {
@@ -57,14 +52,15 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 980px;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin: 0 auto;
 }
 
 /* =========================================================
-   3. CABECERA FLOTANTE POS v3.2
+   2. CABECERA POS
    ========================================================= */
 
 .login-top-header {
@@ -189,79 +185,16 @@
   background: var(--primary);
 }
 
-.login-demo-badge {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: var(--badge-bg);
-  border: 1.5px solid var(--badge-border);
-  color: var(--badge-text);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.login-demo-indicator {
-  position: relative;
-  display: flex;
-  width: 8px;
-  height: 8px;
-}
-
-.login-ping-pulse {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: var(--primary);
-  opacity: 0.75;
-  animation: loginPulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-.login-ping-solid {
-  position: relative;
-  display: inline-flex;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--primary);
-}
-
-@keyframes loginPulse {
-  75%, 100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
-}
-
 /* =========================================================
-   4. GRID DUAL DE PANELES
+   3. TARJETA FORMULARIO
    ========================================================= */
 
-.login-dual-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-@media (min-width: 880px) {
-  .login-dual-grid {
-    grid-template-columns: 1fr 1.3fr;
-  }
-}
-
-/* =========================================================
-   5. COLUMNA IZQUIERDA: FORMULARIO
-   ========================================================= */
-
-.login-card-left {
+.login-card {
   position: relative;
   background: var(--card-bg);
   border: 1.5px solid var(--card-border);
   border-radius: 16px;
-  padding: 26px 24px;
+  padding: 30px 26px;
   box-shadow: var(--shadow-card);
   overflow: hidden;
   display: flex;
@@ -280,7 +213,7 @@
 }
 
 .login-card-header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   text-align: left;
 }
 
@@ -358,23 +291,6 @@
   color: var(--text-primary);
 }
 
-.login-forgot-link {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--secondary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.login-forgot-link:hover {
-  color: var(--primary);
-}
-
 .login-input-wrapper {
   position: relative;
   display: flex;
@@ -391,11 +307,6 @@
 .login-input-wrapper:focus-within {
   border-color: var(--input-focus);
   box-shadow: 0 0 0 2px rgba(0, 229, 163, 0.2);
-}
-
-.login-input-wrapper.input-highlight {
-  background: var(--badge-bg) !important;
-  border-color: var(--primary);
 }
 
 .login-input-icon {
@@ -518,232 +429,8 @@
   }
 }
 
-
 /* =========================================================
-   6. COLUMNA DERECHA: CUENTAS PRECONFIGURADAS
-   ========================================================= */
-
-.login-card-right {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.login-accounts-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-
-.login-accounts-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--primary);
-}
-
-.login-accounts-title .material-symbols-outlined {
-  font-size: 22px;
-}
-
-.login-accounts-title h2 {
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: -0.2px;
-  margin: 0;
-}
-
-.login-autofill-hint {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--badge-bg);
-  border: 1px solid var(--badge-border);
-  color: var(--badge-text);
-}
-
-.login-accounts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.login-account-item {
-  position: relative;
-  background: var(--card-bg);
-  border: 1.5px solid var(--card-border);
-  border-radius: 12px;
-  padding: 13px 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.16s ease;
-  box-shadow: var(--shadow-card);
-}
-
-.login-account-item:hover {
-  background: var(--card-hover);
-  border-color: var(--card-border-strong);
-  transform: translateY(-1px);
-}
-
-.login-account-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.login-account-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 9px;
-  background: var(--input-bg);
-  border: 1px solid var(--card-border);
-  color: var(--secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.18s ease;
-}
-
-.login-account-item:hover .login-account-icon-box {
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.login-account-icon-box.icon-box-admin {
-  background: var(--badge-bg);
-  border-color: var(--badge-border);
-  color: var(--primary);
-}
-
-.login-account-icon-box .material-symbols-outlined {
-  font-size: 21px;
-}
-
-.login-account-details {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  text-align: left;
-  min-width: 0;
-}
-
-.login-account-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.login-account-label {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text-primary);
-  transition: color 0.15s ease;
-}
-
-.login-account-item:hover .login-account-label {
-  color: var(--primary);
-}
-
-.login-account-role-tag {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 5px;
-  background: var(--tag-bg);
-  border: 1px solid var(--tag-border);
-  color: var(--tag-text);
-  white-space: nowrap;
-}
-
-.account-item-admin .login-account-role-tag {
-  background: var(--badge-bg);
-  border-color: var(--badge-border);
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.login-account-creds {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-code, monospace);
-  font-size: 12px;
-  color: var(--text-secondary);
-  flex-wrap: wrap;
-}
-
-.login-account-creds strong {
-  color: var(--creds-user);
-  font-weight: 700;
-}
-
-.login-account-creds em {
-  color: var(--creds-pass);
-  font-weight: 700;
-  font-style: normal;
-}
-
-.login-creds-sep {
-  color: var(--text-muted);
-}
-
-.login-account-action {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.login-account-load-label {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--primary);
-  opacity: 0;
-  transform: translateX(4px);
-  transition: all 0.18s ease;
-}
-
-.login-account-item:hover .login-account-load-label {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.login-account-load-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--input-bg);
-  border: 1.5px solid var(--card-border);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.18s ease;
-}
-
-.login-account-item:hover .login-account-load-icon {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.login-account-load-icon .material-symbols-outlined {
-  font-size: 18px;
-}
-
-
-
-/* =========================================================
-   8. PIE DE PÁGINA MICRO
+   4. PIE DE PÁGINA MICRO
    ========================================================= */
 
 .login-footer {
@@ -758,25 +445,8 @@
   flex-wrap: wrap;
 }
 
-.login-footer-link {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  color: var(--primary);
-  font-size: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: opacity 0.15s ease;
-}
-
-.login-footer-link:hover {
-  opacity: 0.8;
-}
-
 /* =========================================================
-   9. RESPONSIVE MÓVIL
+   5. RESPONSIVE MÓVIL
    ========================================================= */
 
 @media (max-width: 640px) {
@@ -800,16 +470,13 @@
     display: none;
   }
 
-  .login-card-left {
-    padding: 20px 16px;
+  .login-card {
+    padding: 22px 18px;
   }
 
   .login-card-title {
     font-size: 20px;
   }
-
-  .login-account-load-label {
-    display: none;
-  }
 }
+
 

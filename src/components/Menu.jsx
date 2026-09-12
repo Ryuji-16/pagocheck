@@ -1,10 +1,13 @@
 import './css/Menu.css'
 
-function Menu({ username, label, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
+function Menu({ username, label, branch, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
   return (
     <section className="menu-screen">
       <h1>Menú</h1>
-      <p>Hola, {label || username}. ¿Qué quieres hacer?</p>
+      <p>
+        Hola, {label || username}
+        {branch ? <span> · 📍 {branch}</span> : ''}. ¿Qué quieres hacer?
+      </p>
 
       <div className="menu-grid">
         <button type="button" className="menu-card" onClick={onOpenVerify}>

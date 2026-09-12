@@ -133,6 +133,21 @@ html[data-theme='light'] .movements-data-table thead {
 }
 
 /* Columna: CAJA / TERMINAL */
+.terminal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.branch-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .terminal-pill {
   display: inline-block;
   padding: 3px 10px;
@@ -142,6 +157,7 @@ html[data-theme='light'] .movements-data-table thead {
   color: var(--badge-text);
   font-size: 12px;
   font-weight: 600;
+  width: fit-content;
 }
 
 /* Columna: BANCO / ENTIDAD */
@@ -286,12 +302,12 @@ html[data-theme='light'] .movements-data-table thead {
   opacity: 0.7;
 }
 
-/* Columna: RECIBO AUDITADO (El "Ojo") */
+/* Columna: RECIBO AUDITADO (El "Ojo" o Texto auditado) */
 .th-recibo,
 .td-recibo {
   text-align: center;
-  width: 72px;
-  min-width: 72px;
+  width: 124px;
+  min-width: 116px;
 }
 
 .receipt-eye-btn {
@@ -318,6 +334,44 @@ html[data-theme='light'] .movements-data-table thead {
 
 .receipt-eye-btn:active {
   transform: scale(0.95);
+}
+
+.receipt-badge-purged {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid rgba(107, 215, 218, 0.35);
+  background: rgba(107, 215, 218, 0.12);
+  color: var(--secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-theme);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.receipt-badge-purged:hover {
+  background: rgba(107, 215, 218, 0.22);
+  border-color: var(--secondary);
+  transform: scale(1.04);
+}
+
+.receipt-badge-purged:active {
+  transform: scale(0.96);
+}
+
+.receipt-badge-purged-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.receipt-badge-purged-label {
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
 }
 
 .no-receipt-dash {

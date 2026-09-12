@@ -16,7 +16,9 @@ import './css/MovementsPagination.css'
 function Movements({ session, onBack }) {
   const [items, setItems] = useState([])
   const [activeTab, setActiveTab] = useState('all') // 'all' | 'validacion' | 'vuelto'
+  const [selectedBranch, setSelectedBranch] = useState('')
   const [selectedCaja, setSelectedCaja] = useState('')
+  const [selectedBank, setSelectedBank] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [datePreset, setDatePreset] = useState('today') // 'today' | 'yesterday' | 'week' | 'all'
@@ -40,16 +42,50 @@ function Movements({ session, onBack }) {
     }
   }, [session])
 
-  // Opciones de caja para el selector de Admin
+  // Opciones de sucursal para el selector de Admin
+  const branchesOptions = useMemo(() => {
+    const set = new Set()
+    for (const item of items) {
+      if (item.branch) set.add(item.branch)
+    }
+    const defaultBranches = [
+      'Tienda 1 - Centro',
+      'Tienda 2 - Norte',
+      'Tienda 3 - Sur',
+      'Camión Móvil'
+    ]
+    for (const b of defaultBranches) {
+      set.add(b)
+    }
+    return Array.from(set)
+  }, [items])
+
+  // Opciones de caja para el selector de Admin (filtradas por sucursal si hay una seleccionada)
   const cajasOptions = useMemo(() => {
     const map = new Map()
     for (const item of items) {
+      if (selectedBranch && item.branch && item.branch !== selectedBranch) {
+        continue
+      }
       const key = item.username || item.label
       if (key && !map.has(key)) {
         map.set(key, item.label || item.username)
       }
     }
     return Array.from(map.entries()).map(([key, label]) => ({ key, label }))
+  }, [items, selectedBranch])
+
+  // Opciones de banco para el selector de Admin
+  const banksOptions = useMemo(() => {
+    const set = new Set()
+    for (const item of items) {
+      if (item.bank) set.add(item.bank)
+    }
+    const defaultBanks = ['Banesco', 'Banco de Venezuela', 'Banco Exterior', 'Mercantil']
+    for (const b of defaultBanks) {
+      set.add(b)
+    }
+    return Array.from(set)
   }, [items])
 
   // Conteos para las pestañas según la fecha activa
@@ -70,24 +106,34 @@ function Movements({ session, onBack }) {
   const filteredItems = useMemo(() => {
     return items
       .filter((item) => {
-        // 1. Filtro por Caja (solo Admin)
+        // 1. Filtro por Sucursal (solo Admin)
+        if (isAdmin && selectedBranch) {
+          if (item.branch !== selectedBranch) return false
+        }
+
+        // 2. Filtro por Caja (solo Admin)
         if (isAdmin && selectedCaja) {
           const itemKey = item.username || item.label
           if (itemKey !== selectedCaja) return false
         }
 
-        // 2. Filtro por Pestaña activa (Todas / Validaciones / Vueltos)
+        // 3. Filtro por Banco
+        if (selectedBank && item.bank !== selectedBank) {
+          return false
+        }
+
+        // 4. Filtro por Pestaña activa (Todas / Validaciones / Vueltos)
         if (activeTab === 'validacion' && item.type !== 'validacion') return false
         if (activeTab === 'vuelto' && item.type !== 'vuelto') return false
 
-        // 3. Filtro por Estado
+        // 5. Filtro por Estado
         if (statusFilter && item.status !== statusFilter) return false
 
-        // 4. Filtro por Período / Fecha
+        // 6. Filtro por Período / Fecha
         const rawDate = item.at || item.created_at || item.date || item.timestamp
         if (!isDateInPreset(rawDate, datePreset)) return false
 
-        // 5. Búsqueda por texto (referencia, teléfono, cédula, banco, etc.)
+        // 7. Búsqueda por texto (referencia, teléfono, cédula, banco, etc.)
         if (searchQuery.trim()) {
           const q = searchQuery.trim().toLowerCase()
           const combinedText = [
@@ -95,6 +141,7 @@ function Movements({ session, onBack }) {
             item.phone,
             item.cedula,
             item.bank,
+            item.branch,
             item.label,
             item.username,
             item.note,
@@ -121,18 +168,24 @@ function Movements({ session, onBack }) {
         const dateB = parseDate(b.at || b.created_at || b.date || b.timestamp)?.getTime() || 0
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
       })
-  }, [items, isAdmin, selectedCaja, activeTab, statusFilter, datePreset, searchQuery, sortField, sortOrder])
+  }, [items, isAdmin, selectedBranch, selectedCaja, selectedBank, activeTab, statusFilter, datePreset, searchQuery, sortField, sortOrder])
 
-  // Movimientos filtrados por período y caja para el arqueo financiero consolidado
+  // Movimientos filtrados por período, sucursal y caja para el arqueo financiero consolidado
   const summaryItems = useMemo(() => {
     return items.filter((item) => {
+      if (isAdmin && selectedBranch && item.branch !== selectedBranch) {
+        return false
+      }
       if (isAdmin && selectedCaja && item.username !== selectedCaja && item.label !== selectedCaja) {
+        return false
+      }
+      if (selectedBank && item.bank !== selectedBank) {
         return false
       }
       const rawDate = item.at || item.created_at || item.date || item.timestamp
       return isDateInPreset(rawDate, datePreset)
     })
-  }, [items, isAdmin, selectedCaja, datePreset])
+  }, [items, isAdmin, selectedBranch, selectedCaja, selectedBank, datePreset])
 
   // Paginación segura derivada del total de páginas
   const totalPages = Math.ceil(filteredItems.length / pageSize) || 1
@@ -158,7 +211,9 @@ function Movements({ session, onBack }) {
   }
 
   function handleResetFilters() {
+    setSelectedBranch('')
     setSelectedCaja('')
+    setSelectedBank('')
     setSearchQuery('')
     setStatusFilter('')
     setDatePreset('today')
@@ -166,7 +221,7 @@ function Movements({ session, onBack }) {
   }
 
   const hasActiveFilters = Boolean(
-    selectedCaja || searchQuery || statusFilter || datePreset !== 'today'
+    selectedBranch || selectedCaja || selectedBank || searchQuery || statusFilter || datePreset !== 'today'
   )
 
   const datePresetLabels = {
@@ -273,10 +328,23 @@ function Movements({ session, onBack }) {
       {/* 5. Barra unificada de búsqueda y filtros */}
       <MovementsToolbar
         isAdmin={isAdmin}
+        branches={branchesOptions}
+        selectedBranch={selectedBranch}
+        onBranchChange={(branch) => {
+          setSelectedBranch(branch)
+          setSelectedCaja('')
+          setCurrentPage(1)
+        }}
         cajas={cajasOptions}
         selectedCaja={selectedCaja}
         onCajaChange={(caja) => {
           setSelectedCaja(caja)
+          setCurrentPage(1)
+        }}
+        banks={banksOptions}
+        selectedBank={selectedBank}
+        onBankChange={(bank) => {
+          setSelectedBank(bank)
           setCurrentPage(1)
         }}
         searchQuery={searchQuery}

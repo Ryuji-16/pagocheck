@@ -1,16 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
-import { getDemoAccounts, login } from '../services/authService'
+import { login } from '../services/authService'
 import './css/Login.css'
 
 function Login({ onLogin, theme: propTheme, onToggleTheme }) {
-  const accounts = getDemoAccounts()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [highlightInput, setHighlightInput] = useState(false)
   const [localTheme, setLocalTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
   const toastTimerRef = useRef(null)
 
@@ -39,15 +37,6 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
     toastTimerRef.current = setTimeout(() => {
       setToastMessage('')
     }, 3200)
-  }
-
-  function handleSelectAccount(account) {
-    setUsername(account.username)
-    setPassword(account.password)
-    setError('')
-    setHighlightInput(true)
-    setTimeout(() => setHighlightInput(false), 500)
-    showToast(`Cargado: ${account.label} (${account.username})`)
   }
 
   async function handleSubmit(event) {
@@ -91,7 +80,7 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
                 PagoCheck
                 <span className="login-version-badge">POS v3.2</span>
               </div>
-              <span className="login-brand-subtitle">Punto de Venta & Sistema Transaccional</span>
+              <span className="login-brand-subtitle">Punto de Validación</span>
             </div>
           </div>
 
@@ -116,116 +105,100 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
               <span className="login-ping-dot"></span>
               <span>Nodo Activo</span>
             </div>
-            <div className="login-demo-badge">
-              <span className="login-demo-indicator">
-                <span className="login-ping-pulse"></span>
-                <span className="login-ping-solid"></span>
-              </span>
-              <span>Modo demo</span>
-            </div>
           </div>
         </header>
 
-        {/* Panel dual en grid */}
-        <div className="login-dual-grid">
-          {/* Columna Izquierda: Formulario de Autenticación */}
-          <div className="login-card-left">
-            <div className="login-specular-flare" aria-hidden="true"></div>
+        {/* Tarjeta de Inicio de Sesión */}
+        <div className="login-card">
+          <div className="login-specular-flare" aria-hidden="true"></div>
 
-            <div className="login-card-header">
-              <div className="login-auth-badge">
-                <span className="material-symbols-outlined">lock_open</span>
-                Acceso Autorizado
+          <div className="login-card-header">
+            <div className="login-auth-badge">
+              <span className="material-symbols-outlined">lock</span>
+              Acceso Seguro
+            </div>
+            <h1 className="login-card-title">Iniciar sesión</h1>
+            <p className="login-card-subtitle">
+              Acceso a terminales de caja y administración del sistema.
+            </p>
+          </div>
+
+          <form className="login-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="login-error-banner" role="alert">
+                <span className="material-symbols-outlined">error</span>
+                <span>{error}</span>
               </div>
-              <h1 className="login-card-title">Iniciar sesión</h1>
-              <p className="login-card-subtitle">
-                Acceso a terminales de caja y administración del sistema.
-              </p>
+            )}
+
+            {/* Campo Usuario */}
+            <div className="login-field-group">
+              <label className="login-label" htmlFor="login-usuario">
+                Usuario
+              </label>
+              <div className="login-input-wrapper">
+                <span className="material-symbols-outlined login-input-icon">person</span>
+                <input
+                  id="login-usuario"
+                  name="usuario"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  placeholder="Ingresa tu usuario"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value)
+                    setError('')
+                  }}
+                />
+              </div>
             </div>
 
-            <form className="login-form" onSubmit={handleSubmit}>
-              {error && (
-                <div className="login-error-banner" role="alert">
-                  <span className="material-symbols-outlined">error</span>
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Campo Usuario */}
-              <div className="login-field-group">
-                <label className="login-label" htmlFor="login-usuario">
-                  Usuario
+            {/* Campo Contraseña */}
+            <div className="login-field-group">
+              <div className="login-label-row">
+                <label className="login-label" htmlFor="login-password">
+                  Contraseña
                 </label>
-                <div className={`login-input-wrapper ${highlightInput ? 'input-highlight' : ''}`}>
-                  <span className="material-symbols-outlined login-input-icon">person</span>
-                  <input
-                    id="login-usuario"
-                    name="usuario"
-                    type="text"
-                    autoComplete="username"
-                    required
-                    placeholder="Ingresa tu usuario"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value)
-                      setError('')
-                    }}
-                  />
-                </div>
               </div>
-
-              {/* Campo Clave */}
-              <div className="login-field-group">
-                <div className="login-label-row">
-                  <label className="login-label" htmlFor="login-clave">
-                    Clave
-                  </label>
-                  <button
-                    type="button"
-                    className="login-forgot-link"
-                    onClick={() => showToast('Usa los accesos preconfigurados del panel derecho.')}
-                  >
-                    ¿Olvidaste la clave?
-                  </button>
-                </div>
-                <div className={`login-input-wrapper ${highlightInput ? 'input-highlight' : ''}`}>
-                  <span className="material-symbols-outlined login-input-icon">key</span>
-                  <input
-                    id="login-clave"
-                    name="clave"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      setError('')
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="login-toggle-eye"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Ocultar clave' : 'Mostrar clave'}
-                  >
-                    <span className="material-symbols-outlined">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
-                  </button>
-                </div>
+              <div className="login-input-wrapper">
+                <span className="material-symbols-outlined login-input-icon">lock</span>
+                <input
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError('')
+                  }}
+                />
+                <button
+                  type="button"
+                  className="login-toggle-eye"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  <span className="material-symbols-outlined">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
               </div>
+            </div>
 
-              {/* Botón Submit */}
-              <button
-                type="submit"
-                className="login-submit-button"
-                disabled={isSubmitting}
-              >
-                <span>{isSubmitting ? 'Iniciando terminal...' : 'Entrar'}</span>
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </form>
+            {/* Botón Submit */}
+            <button
+              type="submit"
+              className="login-submit-button"
+              disabled={isSubmitting}
+            >
+              <span>{isSubmitting ? 'Ingresando...' : 'Ingresar al sistema'}</span>
+              <span className="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </form>
 
             {/* Toast dinámico */}
             {toastMessage && (
@@ -234,78 +207,6 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
                 <span>{toastMessage}</span>
               </div>
             )}
-
-
-          </div>
-
-          {/* Columna Derecha: Terminales Preconfiguradas */}
-          <div className="login-card-right">
-            <div className="login-accounts-header">
-              <div className="login-accounts-title">
-                <span className="material-symbols-outlined">touch_app</span>
-                <h2>Terminales Preconfiguradas</h2>
-              </div>
-              <span className="login-autofill-hint">Clic para autorellenar</span>
-            </div>
-
-            <div className="login-accounts-list">
-              {accounts.map((account) => {
-                const isAdmin = account.role === 'admin'
-                return (
-                  <div
-                    key={account.username}
-                    className={`login-account-item ${isAdmin ? 'account-item-admin' : ''}`}
-                    onClick={() => handleSelectAccount(account)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        handleSelectAccount(account)
-                      }
-                    }}
-                  >
-                    <div className="login-account-info">
-                      <div className={`login-account-icon-box ${isAdmin ? 'icon-box-admin' : ''}`}>
-                        <span className={`material-symbols-outlined ${isAdmin ? 'icon-fill' : ''}`}>
-                          {account.icon || (isAdmin ? 'shield_person' : 'point_of_sale')}
-                        </span>
-                      </div>
-
-                      <div className="login-account-details">
-                        <div className="login-account-title-row">
-                          <span className="login-account-label">{account.label}</span>
-                          <span className="login-account-role-tag">
-                            {account.subtitle || account.role}
-                          </span>
-                        </div>
-                        <div className="login-account-creds">
-                          <span>
-                            Usuario: <strong>{account.username}</strong>
-                          </span>
-                          <span className="login-creds-sep">•</span>
-                          <span>
-                            Clave: <em>{account.password}</em>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="login-account-action">
-                      <span className="login-account-load-label">Cargar datos</span>
-                      <div className="login-account-load-icon">
-                        <span className="material-symbols-outlined">
-                          {isAdmin ? 'admin_panel_settings' : 'login'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-
-          </div>
         </div>
 
         {/* Pie de página con copyright */}
@@ -313,14 +214,6 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
           <span>PagoCheck Cloud POS © 2025</span>
           <span>•</span>
           <span>Conexión Encriptada TLS 1.3</span>
-          <span>•</span>
-          <button
-            type="button"
-            className="login-footer-link"
-            onClick={() => showToast('Sistema en modo demostración para evaluación POS.')}
-          >
-            Términos de prueba
-          </button>
         </footer>
       </div>
     </section>

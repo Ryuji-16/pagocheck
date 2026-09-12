@@ -64,6 +64,7 @@ function App() {
           <Menu
             username={session.username}
             label={session.label}
+            branch={session.branch}
             onOpenVerify={() => setScreen('verify')}
             onOpenVuelto={() => setScreen('vuelto')}
             onOpenMovements={() => setScreen('movements')}
@@ -105,7 +106,7 @@ function App() {
         )}
 
         {screen === 'settings' && session && (
-          <Settings username={session.username} onBack={goMenu} />
+          <Settings session={session} username={session.username} onBack={goMenu} />
         )}
       </main>
     </>

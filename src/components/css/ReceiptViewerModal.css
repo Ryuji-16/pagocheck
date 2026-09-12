@@ -138,6 +138,29 @@
   display: block;
 }
 
+/* Tarjeta de comprobante archivado / purgado */
+.receipt-purged-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px 18px;
+  border-radius: var(--radius-md, 12px);
+  background: rgba(107, 215, 218, 0.08);
+  border: 1px solid rgba(107, 215, 218, 0.28);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.receipt-purged-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: left;
+}
+
 /* Tarjeta de Metadatos */
 .receipt-viewer-meta-grid {
   width: 100%;

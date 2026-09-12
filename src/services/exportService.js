@@ -207,6 +207,7 @@ const HEADER_STYLE = {
 
 const HEADERS = [
   { value: 'Fecha y Hora', ...HEADER_STYLE },
+  { value: 'Sucursal', ...HEADER_STYLE },
   { value: 'Tipo', ...HEADER_STYLE },
   { value: 'Estado', ...HEADER_STYLE },
   { value: 'Monto', ...HEADER_STYLE },
@@ -219,7 +220,8 @@ const HEADERS = [
 
 const COLUMNS = [
   { width: 22 }, // Fecha
-  { width: 22 }, // Tipo
+  { width: 22 }, // Sucursal
+  { width: 16 }, // Tipo
   { width: 16 }, // Estado
   { width: 16 }, // Monto
   { width: 28 }, // Banco
@@ -240,6 +242,7 @@ function buildSheetData(cajaName, movements) {
     const itemDate = item.at || item.created_at || item.date || item.timestamp
     rows.push([
       { value: formatWhen(itemDate), align: 'center' },
+      { value: item.branch || 'General', align: 'center' },
       { value: formatType(item.type), align: 'center' },
       { value: formatStatus(item.status), align: 'center' },
       {
@@ -259,7 +262,7 @@ function buildSheetData(cajaName, movements) {
   const lastDataRow = movements.length + 1
 
   // Fila vacía separadora
-  rows.push([null, null, null, null, null, null, null, null, null])
+  rows.push([null, null, null, null, null, null, null, null, null, null])
 
   const valids = movements.filter((m) => m.type === 'validacion').length
   const vueltos = movements.filter((m) => m.type === 'vuelto').length
@@ -270,7 +273,7 @@ function buildSheetData(cajaName, movements) {
     totalLabel += ` (${vueltos} vueltos)`
   }
 
-  // Fila de total con autosuma en columna D
+  // Fila de total con autosuma en columna E
   rows.push([
     {
       value: totalLabel,
@@ -279,8 +282,9 @@ function buildSheetData(cajaName, movements) {
     },
     null,
     null,
+    null,
     {
-      value: `=SUM(D2:D${lastDataRow})`,
+      value: `=SUM(E2:E${lastDataRow})`,
       type: 'Formula',
       format: '#,##0.00',
       fontWeight: 'bold',
@@ -322,10 +326,11 @@ export async function exportMovementsToExcel(movements, options = {}) {
     throw new Error('No hay validaciones ni vueltos registrados el día de hoy para exportar.')
   }
 
-  // Agrupar movimientos por caja
+  // Agrupar movimientos por sucursal y caja
   const groups = new Map()
   for (const item of targetMovements) {
-    const key = item.label || item.username || 'General'
+    const branchPart = item.branch ? `${item.branch} · ` : ''
+    const key = `${branchPart}${item.label || item.username || 'Caja'}`
     if (!groups.has(key)) {
       groups.set(key, [])
     }

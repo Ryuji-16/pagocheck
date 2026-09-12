@@ -2,9 +2,15 @@ import { useState } from 'react'
 
 function MovementsToolbar({
   isAdmin,
+  branches = [],
+  selectedBranch = '',
+  onBranchChange,
   cajas = [],
   selectedCaja,
   onCajaChange,
+  banks = [],
+  selectedBank = '',
+  onBankChange,
   searchQuery,
   onSearchChange,
   onSearchSubmit,
@@ -40,9 +46,23 @@ function MovementsToolbar({
   return (
     <div className="movements-toolbar-wrapper">
       <div className="movements-toolbar">
-        {/* Lado izquierdo: Selector de Caja (Solo Admin) */}
+        {/* Lado izquierdo: Selectores de Sucursal y Caja (Solo Admin) */}
         {isAdmin ? (
           <div className="movements-caja-select-container">
+            <select
+              className="movements-branch-select"
+              value={selectedBranch}
+              onChange={(e) => onBranchChange && onBranchChange(e.target.value)}
+              title="Filtrar por tienda o sucursal"
+            >
+              <option value="">Todas las tiendas</option>
+              {branches.map((branch) => (
+                <option key={branch} value={branch}>
+                  📍 {branch}
+                </option>
+              ))}
+            </select>
+
             <select
               className="movements-caja-select"
               value={selectedCaja}
@@ -140,6 +160,22 @@ function MovementsToolbar({
               <option value="simulado">Simulado</option>
               <option value="not-found">No encontrado</option>
               <option value="error">Error</option>
+            </select>
+          </div>
+
+          <div className="movements-advanced-group">
+            <label htmlFor="bank-filter-select">Banco:</label>
+            <select
+              id="bank-filter-select"
+              value={selectedBank}
+              onChange={(e) => onBankChange && onBankChange(e.target.value)}
+            >
+              <option value="">Todos los bancos</option>
+              {banks.map((bank) => (
+                <option key={bank} value={bank}>
+                  {bank}
+                </option>
+              ))}
             </select>
           </div>
 

@@ -228,7 +228,10 @@ function extractReference(compact) {
   const labeled = compact.match(
     /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*de\s+referencia|referencia|operaci[oó]n)\s*[-:]?\s*(\d{6,14})/i
   )
-  if (labeled) return labeled[1]
+  if (labeled) {
+    const digits = labeled[1].replace(/\D/g, '')
+    return digits.slice(-6)
+  }
 
   return ''
 }

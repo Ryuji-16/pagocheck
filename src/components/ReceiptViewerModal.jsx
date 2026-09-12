@@ -22,11 +22,13 @@ function ReceiptViewerModal({ item, onClose }) {
 
   if (!item) return null
 
+  const isPurged = item.receipt_image === 'purged'
   const bankInfo = getBankInfo(item.bank)
   const rawDate = item.at || item.created_at || item.date || item.timestamp
   const displayDate = formatMovementDate(rawDate)
   const displayAmount = formatBs(item.amount)
   const terminalName = item.label || item.username || 'Caja'
+  const branchName = item.branch || 'Principal'
 
   return (
     <div
@@ -42,7 +44,8 @@ function ReceiptViewerModal({ item, onClose }) {
         <div className="receipt-viewer-header">
           <div className="receipt-viewer-title-group">
             <h3>
-              <span>👁️</span> Comprobante Original
+              <span>{isPurged ? '📄' : '👁️'}</span>{' '}
+              {isPurged ? 'Comprobante Auditado' : 'Comprobante Original'}
             </h3>
             <span className="receipt-viewer-subtitle">
               Ref #{item.reference || '-'} • {displayDate}
@@ -60,7 +63,13 @@ function ReceiptViewerModal({ item, onClose }) {
         </div>
 
         <div className="receipt-viewer-body">
-          {item.receipt_image ? (
+          {isPurged ? (
+            <div className="receipt-purged-card" role="status">
+              <p className="receipt-purged-text">
+                ℹ️ Comprobante archivado en texto. La captura de imagen fue purgada automáticamente tras 7 días para optimizar el almacenamiento, pero todos los datos de auditoría se conservan en el sistema.
+              </p>
+            </div>
+          ) : item.receipt_image ? (
             <div className="receipt-viewer-img-container">
               <img
                 src={item.receipt_image}
@@ -97,26 +106,54 @@ function ReceiptViewerModal({ item, onClose }) {
             </div>
 
             <div className="receipt-viewer-meta-item">
+              <span className="receipt-viewer-meta-label">Fecha</span>
+              <span className="receipt-viewer-meta-value">
+                {displayDate}
+              </span>
+            </div>
+
+            <div className="receipt-viewer-meta-item">
+              <span className="receipt-viewer-meta-label">Sucursal</span>
+              <span className="receipt-viewer-meta-value">
+                {branchName}
+              </span>
+            </div>
+
+            <div className="receipt-viewer-meta-item">
               <span className="receipt-viewer-meta-label">Caja</span>
               <span className="receipt-viewer-meta-value">
                 {terminalName}
               </span>
             </div>
 
-            {item.phone && (
-              <div className="receipt-viewer-meta-item">
-                <span className="receipt-viewer-meta-label">Teléfono</span>
-                <span className="receipt-viewer-meta-value">
-                  {item.phone}
-                </span>
-              </div>
-            )}
+            <div className="receipt-viewer-meta-item">
+              <span className="receipt-viewer-meta-label">Teléfono</span>
+              <span className="receipt-viewer-meta-value">
+                {item.phone || '-'}
+              </span>
+            </div>
+
+            <div className="receipt-viewer-meta-item">
+              <span className="receipt-viewer-meta-label">Cédula</span>
+              <span className="receipt-viewer-meta-value">
+                {item.cedula || '-'}
+              </span>
+            </div>
 
             {item.status && (
               <div className="receipt-viewer-meta-item">
                 <span className="receipt-viewer-meta-label">Estado</span>
                 <span className="receipt-viewer-meta-value">
                   {item.status}
+                </span>
+              </div>
+            )}
+
+            {item.note && (
+              <div className="receipt-viewer-meta-item">
+                <span className="receipt-viewer-meta-label">Nota</span>
+                <span className="receipt-viewer-meta-value">
+                  {item.note}
                 </span>
               </div>
             )}
