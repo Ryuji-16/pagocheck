@@ -47,38 +47,32 @@ drop policy if exists movements_insert on public.movements;
 create policy movements_insert on public.movements
   for insert to anon with check (true);
 
--- Funciones RPC seguras con SECURITY DEFINER para verificación y cambio de credenciales
+-- 4. Funciones RPC seguras de login y cambio de clave (con search_path protegido)
 create or replace function public.verify_login(p_username text, p_password_hash text)
 returns table(username text, role text, label text, branch text)
-language plpgsql
-security definer
-as $$
+language plpgsql security definer set search_path = public as $$
 begin
   return query
   select u.username, u.role, u.label, u.branch
   from public.app_users u
-  where u.username = p_username
+  where lower(u.username) = lower(p_username)
     and u.password_hash = p_password_hash;
 end;
 $$;
 
 create or replace function public.change_user_password(p_username text, p_old_hash text, p_new_hash text)
 returns boolean
-language plpgsql
-security definer
-as $$
+language plpgsql security definer set search_path = public as $$
 declare
   v_updated boolean := false;
 begin
   update public.app_users
   set password_hash = p_new_hash
-  where username = p_username
+  where lower(username) = lower(p_username)
     and password_hash = p_old_hash;
-
   if found then
     v_updated := true;
   end if;
-
   return v_updated;
 end;
 $$;
