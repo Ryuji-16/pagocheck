@@ -158,13 +158,42 @@ export async function login(username, password) {
 
   if (isRemoteDbEnabled()) {
     const passwordHash = await hashPassword(pass)
-    const { data, error } = await remoteRequest('rpc/verify_login', {
+    let { data, error } = await remoteRequest('rpc/verify_login', {
       method: 'POST',
       body: {
         p_username: name,
         p_password_hash: passwordHash
       }
     })
+
+    // Fallback si la función RPC verify_login aún no fue creada en Supabase
+    if (error) {
+      const fallbackQuery = await remoteRequest(
+        `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,branch,password_hash`
+      )
+      if (fallbackQuery.error) {
+        const fallbackNoBranch = await remoteRequest(
+          `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,password_hash`
+        )
+        if (!fallbackNoBranch.error && Array.isArray(fallbackNoBranch.data) && fallbackNoBranch.data.length > 0) {
+          const u = fallbackNoBranch.data[0]
+          if (u.password_hash === passwordHash) {
+            data = [{ username: u.username, role: u.role, label: u.label, branch: '' }]
+            error = null
+          } else {
+            return { ok: false, message: 'Usuario o clave incorrectos.' }
+          }
+        }
+      } else if (Array.isArray(fallbackQuery.data) && fallbackQuery.data.length > 0) {
+        const u = fallbackQuery.data[0]
+        if (u.password_hash === passwordHash) {
+          data = [{ username: u.username, role: u.role, label: u.label, branch: u.branch || '' }]
+          error = null
+        } else {
+          return { ok: false, message: 'Usuario o clave incorrectos.' }
+        }
+      }
+    }
 
     if (error) {
       return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
@@ -214,7 +243,7 @@ export async function changePassword(username, currentPassword, nextPassword) {
   if (isRemoteDbEnabled()) {
     const oldHash = await hashPassword(currentPassword)
     const newHash = await hashPassword(nextPassword)
-    const { data, error } = await remoteRequest('rpc/change_user_password', {
+    let { data, error } = await remoteRequest('rpc/change_user_password', {
       method: 'POST',
       body: {
         p_username: username,
@@ -222,6 +251,29 @@ export async function changePassword(username, currentPassword, nextPassword) {
         p_new_hash: newHash
       }
     })
+
+    // Fallback si la función change_user_password aún no existe en Supabase
+    if (error) {
+      const checkUser = await remoteRequest(
+        `app_users?username=eq.${encodeURIComponent(username)}&select=username,password_hash`
+      )
+      if (!checkUser.error && Array.isArray(checkUser.data) && checkUser.data.length > 0) {
+        if (checkUser.data[0].password_hash !== oldHash) {
+          return { ok: false, message: 'La clave actual no es correcta.' }
+        }
+        const updateRes = await remoteRequest(
+          `app_users?username=eq.${encodeURIComponent(username)}`,
+          {
+            method: 'PATCH',
+            body: { password_hash: newHash }
+          }
+        )
+        if (!updateRes.error) {
+          data = true
+          error = null
+        }
+      }
+    }
 
     if (error) {
       return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
