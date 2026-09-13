@@ -127,10 +127,14 @@ function toListItem(row) {
 
 export async function saveMovement(entry) {
   const session = getSession()
+  const isGeneralAdmin = session?.role === 'admin' && !session?.branch
+  const authorUsername = isGeneralAdmin ? (entry.username || session?.username || 'admin') : (session?.username || entry.username || 'caja1')
+  const targetBranch = isGeneralAdmin ? (entry.branch || '') : (session?.branch || entry.branch || '')
+
   const item = {
-    username: entry.username || session?.username || 'caja1',
-    label: entry.label || session?.label || session?.username || 'Caja 1',
-    branch: entry.branch || session?.branch || '',
+    username: authorUsername,
+    label: entry.label || session?.label || authorUsername,
+    branch: targetBranch,
     type: entry.type,
     status: entry.status || 'ok',
     amount: entry.amount || '',
