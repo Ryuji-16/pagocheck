@@ -74,18 +74,33 @@ function hasExtractedFields(data) {
   )
 }
 
-function digitsOnly(value) {
+export function digitsOnly(value) {
   return String(value || '').replace(/\D/g, '')
 }
 
-function formatPhone(value) {
+/**
+ * Corrige confusiones típicas de OCR en cadenas que deberían ser numéricas
+ * (ej: letras 'O', 'o' por '0'; 'I', 'l', '|' por '1'; 'S', 's' por '5').
+ */
+export function cleanOcrDigits(value) {
+  if (!value) return ''
+  return String(value)
+    .replace(/[Oo]/g, '0')
+    .replace(/[Il|]/g, '1')
+    .replace(/[Ss]/g, '5')
+    .replace(/[Zz]/g, '2')
+    .replace(/[Bb]/g, '8')
+    .replace(/\D/g, '')
+}
+
+export function formatPhone(value) {
   const all = digitsOnly(value).replace(/^58/, '')
   const local = all.startsWith('0') ? all : `0${all}`
   if (local.length !== 11 || !local.startsWith('04')) return ''
   return `${local.slice(0, 4)}-${local.slice(4)}`
 }
 
-function normalizeOcr(text) {
+export function normalizeOcr(text) {
   return String(text || '')
     .toLowerCase()
     .normalize('NFD')
@@ -97,7 +112,7 @@ const RECEIVER_LABEL =
 const PAYER_LABEL =
   /pagador|emisor|remitente|ordenante|celular de origen|n[uú]mero celular de origen|cuenta\/tel[eé]fono|telefono origen|n[uú]mero origen|banco origen.{0,40}/
 
-function extractPayerPhone(text) {
+export function extractPayerPhone(text) {
   const compact = text.replace(/\s+/g, ' ')
   const phonePattern = /(?:\+?58)?\(?0?4\d{2}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/g
   const payerPhones = []
@@ -114,32 +129,46 @@ function extractPayerPhone(text) {
     if (PAYER_LABEL.test(context)) payerPhones.push(formatted)
   }
 
+  // Si no se encontró explícitamente como pagador, usar el primer teléfono que no sea receptor
+  if (!payerPhones[0]) {
+    phonePattern.lastIndex = 0
+    while ((match = phonePattern.exec(compact))) {
+      const formatted = formatPhone(match[0])
+      if (!formatted) continue
+      const start = Math.max(0, match.index - 50)
+      const context = compact.slice(start, match.index + match[0].length).toLowerCase()
+      if (!RECEIVER_LABEL.test(context)) {
+        return formatted
+      }
+    }
+  }
+
   return payerPhones[0] || ''
 }
 
-const BANK_ALIASES = {
-  '0102': ['0102', 'pagomovilbdv', 'pagomevilbdv', 'bdvapp', 'banco de venezuela'],
+export const BANK_ALIASES = {
+  '0102': ['0102', 'pagomovilbdv', 'pagomevilbdv', 'bdvapp', 'banco de venezuela', 'bdv'],
   '0104': ['0104', 'venezolano de credito', 'bvc'],
-  '0105': ['0105', 'mercantil', 'tpago'],
-  '0108': ['0108', 'provincial', 'bbva'],
-  '0114': ['0114', 'bancaribe'],
-  '0115': ['0115', 'exterior'],
-  '0128': ['0128', 'caroni'],
-  '0134': ['0134', 'banesco'],
+  '0105': ['0105', 'mercantil', 'tpago', 't-pago'],
+  '0108': ['0108', 'provincial', 'bbva', 'bbva provincial'],
+  '0114': ['0114', 'bancaribe', 'mi conexion bancaribe'],
+  '0115': ['0115', 'exterior', 'banco exterior'],
+  '0128': ['0128', 'caroni', 'banco caroni'],
+  '0134': ['0134', 'banesco', 'banescomovil', 'pagomovil banesco'],
   '0137': ['0137', 'sofitasa'],
-  '0138': ['0138', 'plaza'],
-  '0151': ['0151', 'bfc', 'fondo comun'],
-  '0156': ['0156', '100% banco'],
-  '0157': ['0157', 'delsur'],
-  '0163': ['0163', 'tesoro'],
+  '0138': ['0138', 'plaza', 'banco plaza'],
+  '0151': ['0151', 'bfc', 'fondo comun', 'banco fondo comun'],
+  '0156': ['0156', '100% banco', '100%banco'],
+  '0157': ['0157', 'delsur', 'del sur'],
+  '0163': ['0163', 'tesoro', 'banco del tesoro'],
   '0168': ['0168', 'bancrecer'],
-  '0171': ['0171', 'activo'],
-  '0172': ['0172', 'bancamiga'],
+  '0171': ['0171', 'activo', 'banco activo'],
+  '0172': ['0172', 'bancamiga', 'pago movil bancamiga'],
   '0174': ['0174', 'banplus'],
-  '0175': ['0175', 'trabajadores'],
+  '0175': ['0175', 'trabajadores', 'bicentenario'],
   '0177': ['0177', 'banfanb', 'fanb'],
   '0178': ['0178', 'n58'],
-  '0191': ['0191', 'bnc', 'nacional de credito']
+  '0191': ['0191', 'bnc', 'nacional de credito', 'banco nacional de credito']
 }
 
 function findBankByAliases(haystack) {
@@ -150,25 +179,28 @@ function findBankByAliases(haystack) {
   return null
 }
 
-function detectBank(text) {
+export function detectBank(text) {
   const lower = normalizeOcr(text)
 
+  // 1. Detección por encabezado o mención de banco emisor/origen
   const emisor = lower.match(
-    /banco\s*(emisor|origen)\s*[-:]?\s*([a-z0-9 .]{3,40})/
+    /banco\s*(?:emisor|origen)\s*[-:]?\s*([a-z0-9 .]{3,40})/
   )
   if (emisor) {
-    const found = findBankByAliases(emisor[2])
+    const found = findBankByAliases(emisor[1])
     if (found) return found
   }
 
+  // 2. Detección por código de 4 dígitos (0102, 0134, etc.)
   const originCode = lower.match(
-    /(?:instrumento\s+origen|origen)\s*[-:]?\s*(01\d{2})/
+    /(?:instrumento\s+origen|banco\s+origen|origen)\s*[-:]?\s*(01\d{2})/
   )
   if (originCode) {
     const found = BANKS.find((item) => item.code === originCode[1])
     if (found) return found
   }
 
+  // 3. Firmas directas de apps bancarias reconocidas
   if (/cta\.?\s*corriente\s*bnc|\bbnc\b/.test(lower.slice(0, 400))) {
     return BANKS.find((item) => item.code === '0191') || null
   }
@@ -177,15 +209,27 @@ function detectBank(text) {
     return BANKS.find((item) => item.code === '0105') || null
   }
 
-  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv/.test(lower)) {
+  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv|banco de venezuela/.test(lower.slice(0, 600))) {
     return BANKS.find((item) => item.code === '0102') || null
   }
 
-  const header = lower.slice(0, 280)
+  if (/banesco|banescom[oó]vil/.test(lower.slice(0, 500))) {
+    return BANKS.find((item) => item.code === '0134') || null
+  }
+
+  if (/provincial|bbva/.test(lower.slice(0, 500))) {
+    return BANKS.find((item) => item.code === '0108') || null
+  }
+
+  if (/bancamiga/.test(lower.slice(0, 500))) {
+    return BANKS.find((item) => item.code === '0172') || null
+  }
+
+  const header = lower.slice(0, 300)
   const withoutDestination = lower
     .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
     .replace(/beneficiar[\s\S]{0,80}/g, ' ')
-    .replace(/banco\s*(destino|receptor)\s*[-:][\s\S]{0,60}/g, ' ')
+    .replace(/banco\s*(?:destino|receptor)\s*[-:][\s\S]{0,60}/g, ' ')
     .replace(/\bbanco\s*:\s*[\s\S]{0,48}/g, ' ')
 
   return findBankByAliases(header) || findBankByAliases(withoutDestination)
@@ -203,10 +247,22 @@ const MONTHS = {
   septiembre: '09',
   octubre: '10',
   noviembre: '11',
-  diciembre: '12'
+  diciembre: '12',
+  ene: '01',
+  feb: '02',
+  mar: '03',
+  abr: '04',
+  may: '05',
+  jun: '06',
+  jul: '07',
+  ago: '08',
+  sep: '09',
+  oct: '10',
+  nov: '11',
+  dic: '12'
 }
 
-function extractDate(compact) {
+export function extractDate(compact) {
   const numeric = compact.match(/\b(\d{2})[/-](\d{2})[/-](\d{2,4})\b/)
   if (numeric) {
     const year = numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3]
@@ -214,7 +270,7 @@ function extractDate(compact) {
   }
 
   const named = normalizeOcr(compact).match(
-    /\b(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?(\d{4})\b/
+    /\b(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+(?:de\s+)?(\d{4})\b/
   )
   if (named) {
     const day = named[1].padStart(2, '0')
@@ -224,45 +280,185 @@ function extractDate(compact) {
   return ''
 }
 
-function extractReference(compact) {
-  const labeled = compact.match(
-    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*de\s+referencia|referencia|operaci[oó]n)\s*[-:]?\s*(\d{6,14})/i
-  )
-  if (labeled) {
-    const digits = labeled[1].replace(/\D/g, '')
-    return digits.slice(-6)
+/**
+ * Extrae el número de referencia completo (sin truncar a los últimos 6 dígitos),
+ * sanitizando posibles errores visuales de OCR y evitando falsos positivos de estado.
+ */
+export function extractReference(compact) {
+  // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, etc.)
+  const refPattern =
+    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*(?:de\s*)?referencia|n[°º]\.?\s*(?:de\s*)?referencia|referencia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([0-9A-Za-z|]{4,16})/gi
+
+  let match
+  while ((match = refPattern.exec(compact))) {
+    const candidate = match[1]
+    // Si solo tiene letras y ningún dígito real, descartar (ej: "Exitosa", "Aprobada")
+    if (/^[a-zA-Z]+$/.test(candidate) && !/[0-9]/.test(candidate)) {
+      continue
+    }
+    const digits = cleanOcrDigits(candidate)
+    if (digits.length >= 4) {
+      return digits
+    }
+  }
+
+  // Patrón 2: Referencia aislada tras dos puntos
+  const fallbackPattern = /\bref\b\s*[:.-]?\s*([0-9A-Za-z|]{4,14})/gi
+  while ((match = fallbackPattern.exec(compact))) {
+    const candidate = match[1]
+    if (/^[a-zA-Z]+$/.test(candidate) && !/[0-9]/.test(candidate)) {
+      continue
+    }
+    const digits = cleanOcrDigits(candidate)
+    if (digits.length >= 4) {
+      return digits
+    }
   }
 
   return ''
 }
 
-function extractAmount(compact) {
+/**
+ * Extrae y normaliza el monto de la transacción en formato venezolano estándar: 'Bs. 1.250,50'
+ */
+export function extractAmount(compact) {
+  // 1. Monto precedido o seguido de etiqueta explícita
   const labeled = compact.match(
-    /(?:monto(?:\s+de\s+la\s+operaci[oó]n)?(?:\s*\(bs\.?\))?|bs\.?)\s*[-:]?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{2})|[0-9]+,[0-9]{2})/i
+    /(?:monto(?:\s+de\s+la\s+operaci[oó]n)?(?:\s*\(bs\.?\))?|importe|total(?:\s+pagado)?|total)\s*[-:]?\s*(?:bs\.?|ves|usd|\$)?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{1,2})|[0-9]+,[0-9]{1,2}|[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})|[0-9]+\.[0-9]{2})/i
   )
-  if (labeled) return `Bs. ${labeled[1].replace(/'/g, '.')}`
+  if (labeled) {
+    let cleanVal = labeled[1].replace(/'/g, '.').trim()
+    // Si viene con formato punto decimal (ej: 1250.50), convertir a coma decimal
+    if (/^[0-9]+(?:\.[0-9]{2})$/.test(cleanVal)) {
+      cleanVal = cleanVal.replace('.', ',')
+    }
+    // Si solo tiene un decimal (ej: 1250,5), completar con cero
+    if (/,\d$/.test(cleanVal)) {
+      cleanVal += '0'
+    }
+    return `Bs. ${cleanVal}`
+  }
 
-  const after = compact.match(
-    /([0-9]{1,3}(?:[.\s][0-9]{3})*,[0-9]{2})\s*bs/i
+  // 2. Monto con símbolo Bs / VES
+  const withCurrency = compact.match(
+    /(?:bs\.?|ves)\s*[-:]?\s*([0-9]{1,3}(?:[.\s'][0-9]{3})*(?:,[0-9]{1,2})|[0-9]+,[0-9]{1,2})/i
   )
-  if (after) return `Bs. ${after[1]}`
+  if (withCurrency) {
+    let cleanVal = withCurrency[1].replace(/'/g, '.').trim()
+    if (/,\d$/.test(cleanVal)) cleanVal += '0'
+    return `Bs. ${cleanVal}`
+  }
+
+  // 3. Monto seguido de Bs
+  const after = compact.match(
+    /([0-9]{1,3}(?:[.\s'][0-9]{3})*,[0-9]{1,2})\s*(?:bs\.?|ves)/i
+  )
+  if (after) {
+    let cleanVal = after[1].trim()
+    if (/,\d$/.test(cleanVal)) cleanVal += '0'
+    return `Bs. ${cleanVal}`
+  }
 
   return ''
 }
 
-function parsePaymentText(text) {
+/**
+ * Evalúa la completitud y calidad de los datos extraídos del comprobante.
+ * Identifica qué campos mandatorios faltan y asigna un puntaje de confianza.
+ *
+ * @param {object} data
+ * @param {string} [data.reference]
+ * @param {string} [data.bank]
+ * @param {string} [data.amount]
+ * @param {string} [data.phone]
+ * @param {string} [data.date]
+ * @returns {{ isValid: boolean, isComplete: boolean, confidence: number, missingFields: string[], warnings: string[] }}
+ */
+export function validatePaymentData(data = {}) {
+  const missingFields = []
+  const warnings = []
+  let score = 0
+
+  // 1. Referencia (35 puntos)
+  const refDigits = digitsOnly(data.reference)
+  if (!refDigits) {
+    missingFields.push('reference')
+  } else if (refDigits.length < 4) {
+    warnings.push('La referencia detectada es muy corta (menos de 4 dígitos).')
+    score += 15
+  } else {
+    score += 35
+  }
+
+  // 2. Banco (25 puntos)
+  if (!data.bank || String(data.bank).trim() === '') {
+    missingFields.push('bank')
+  } else {
+    score += 25
+  }
+
+  // 3. Monto (20 puntos)
+  if (!data.amount || String(data.amount).trim() === '') {
+    missingFields.push('amount')
+  } else {
+    score += 20
+  }
+
+  // 4. Teléfono (10 puntos)
+  if (!data.phone || String(data.phone).trim() === '') {
+    missingFields.push('phone')
+  } else if (!/^04\d{2}-\d{7}$/.test(String(data.phone).trim())) {
+    warnings.push('El teléfono no cumple el formato móvil venezolano estándar (04XX-XXXXXXX).')
+    score += 5
+  } else {
+    score += 10
+  }
+
+  // 5. Fecha (10 puntos)
+  if (!data.date || String(data.date).trim() === '') {
+    missingFields.push('date')
+  } else {
+    score += 10
+  }
+
+  const isValid = Boolean(refDigits && refDigits.length >= 4 && data.bank)
+  const isComplete = missingFields.length === 0
+
+  return {
+    isValid,
+    isComplete,
+    confidence: Math.min(100, Math.max(0, score)),
+    missingFields,
+    warnings
+  }
+}
+
+export function parsePaymentText(text) {
   const raw = String(text || '')
   const compact = raw.replace(/\s+/g, ' ')
 
+  const reference = extractReference(compact)
+  const date = extractDate(compact)
+  const detectedBank = detectBank(compact)
+  const bank = detectedBank ? formatBankLabel(detectedBank) : ''
+  const amount = extractAmount(compact)
+  const phone = extractPayerPhone(compact)
+
+  const validation = validatePaymentData({
+    reference,
+    date,
+    bank,
+    amount,
+    phone
+  })
+
   return {
-    reference: extractReference(compact),
-    date: extractDate(compact),
-    bank: (() => {
-      const item = detectBank(compact)
-      return item ? formatBankLabel(item) : ''
-    })(),
-    amount: extractAmount(compact),
-    phone: extractPayerPhone(compact),
+    reference,
+    date,
+    bank,
+    amount,
+    phone,
+    validation,
     rawText: raw.trim()
   }
 }

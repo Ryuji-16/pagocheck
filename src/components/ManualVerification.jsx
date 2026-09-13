@@ -31,16 +31,19 @@ function isValidDisplayDate(value) {
 function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialValues = {} }) {
   const [date, setDate] = useState(initialValues.date || formatToday)
   const [reference, setReference] = useState(initialValues.reference || '')
+  const [amount, setAmount] = useState(initialValues.amount || '')
   const [phone, setPhone] = useState(initialValues.phone || '')
   const [bank, setBank] = useState(initialValues.bank || '')
   const [formError, setFormError] = useState('')
   const [duplicateAlert, setDuplicateAlert] = useState(null)
   const fromOcr = Boolean(initialValues.source === 'ocr')
+  const validation = initialValues.validation || null
 
   function triggerVerification() {
     onVerify({
       date: date.trim(),
       reference: reference.trim(),
+      amount: amount.trim(),
       phone: phone.trim(),
       bank
     })
@@ -121,6 +124,23 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
       </div>
 
       <div className="manual-form">
+        {fromOcr && validation && (
+          <div
+            className={`ocr-status-banner ${
+              validation.isComplete ? 'ocr-status-success' : 'ocr-status-warning'
+            }`}
+            role="status"
+          >
+            {validation.isComplete ? (
+              <span>✓ Comprobante leído con éxito. Revisa y verifica.</span>
+            ) : (
+              <span>
+                ⚠️ Lectura parcial (confianza: {validation.confidence}%). Completa los campos faltantes.
+              </span>
+            )}
+          </div>
+        )}
+
         <label>
           Fecha
           <input
@@ -152,6 +172,20 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
             placeholder="Número de referencia"
             onChange={(event) => {
               setReference(event.target.value)
+              setFormError('')
+            }}
+          />
+        </label>
+
+        <label>
+          Monto
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amount}
+            placeholder="Ej: Bs. 250,00"
+            onChange={(event) => {
+              setAmount(event.target.value)
               setFormError('')
             }}
           />

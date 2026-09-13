@@ -26,6 +26,33 @@
   overflow: visible;
 }
 
+/* =========================================================
+   ESTADO DE OCR
+   ========================================================= */
+
+.ocr-status-banner {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.ocr-status-success {
+  background: rgba(0, 229, 163, 0.12);
+  border: 1px solid rgba(0, 229, 163, 0.35);
+  color: var(--text-primary);
+}
+
+.ocr-status-warning {
+  background: rgba(255, 171, 0, 0.14);
+  border: 1px solid rgba(255, 171, 0, 0.4);
+  color: var(--text-primary);
+}
+
 
 /* =========================================================
    CAMPOS

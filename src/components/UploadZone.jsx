@@ -120,7 +120,7 @@ function UploadZone({ onBack }) {
       await saveMovement({
         type: 'validacion',
         status: result.status,
-        amount: result.amount || '',
+        amount: result.amount || data.amount || '',
         reference: result.reference || data.reference || '',
         phone: result.phone || data.phone || '',
         bank: result.bank || data.bank || '',

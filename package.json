@@ -13,7 +13,8 @@
     "test:rbac": "node scripts/test_rbac.js",
     "test:integrity": "node scripts/test_integrity.js",
     "test:provider": "node scripts/test_verification_provider.js",
-    "test:storage": "node scripts/test_storage.js"
+    "test:storage": "node scripts/test_storage.js",
+    "test:ocr": "node scripts/test_ocr.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
