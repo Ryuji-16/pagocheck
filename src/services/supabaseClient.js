@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const env = (typeof import.meta !== 'undefined' && import.meta.env) || (typeof globalThis !== 'undefined' && globalThis.process?.env) || {}
+const rawUrl = env.VITE_SUPABASE_URL || ''
+const anonKey = env.VITE_SUPABASE_ANON_KEY || ''
 
 export function isRemoteDbEnabled() {
   return Boolean(rawUrl && anonKey)

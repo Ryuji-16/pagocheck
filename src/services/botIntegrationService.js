@@ -1,5 +1,5 @@
-import { getTenantConfig } from '../config/tenantConfig'
-import { findMovementByReference, saveMovement } from './historyService'
+import { getTenantConfig } from '../config/tenantConfig.js'
+import { findMovementByReference, saveMovement } from './historyService.js'
 
 /**
  * Verifica si un número de referencia ya fue utilizado previamente

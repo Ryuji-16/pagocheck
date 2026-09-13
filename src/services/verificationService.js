@@ -1,12 +1,7 @@
-import { findMovementByReference } from './historyService'
-
-const DEMO_DELAY_MS = 2000
-
-function wait(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
+import { findMovementByReference } from './historyService.js'
+import { isRemoteDbEnabled } from './supabaseClient.js'
+import { MockPaymentProvider } from './providers/MockPaymentProvider.js'
+import { EdgeFunctionPaymentProvider } from './providers/EdgeFunctionPaymentProvider.js'
 
 function formatWhen(value) {
   try {
@@ -21,79 +16,37 @@ function formatWhen(value) {
   }
 }
 
-/*
- * Punto de conexión con el banco.
+// Instancia activa del proveedor de verificación
+let activeProvider = null
+
+export function getVerificationProvider() {
+  if (!activeProvider) {
+    activeProvider = isRemoteDbEnabled()
+      ? new EdgeFunctionPaymentProvider()
+      : new MockPaymentProvider()
+  }
+  return activeProvider
+}
+
+export function setVerificationProvider(provider) {
+  activeProvider = provider
+}
+
+/**
+ * Función principal de verificación bancaria para la UI de PagoCheck.
  *
- * Hoy devuelve una simulación.
- * Cuando exista la API de Banesco, solo se cambia esta función.
- * verifyPayment() y el resto de la UI no deberían reestructurarse.
+ * Flujo:
+ * 1. Pre-chequeo anti-fraude en cliente (prevención instantánea).
+ * 2. Delegación al proveedor bancario activo (Mock local o Edge Function server-side).
+ * 3. Normalización consistente del resultado.
+ *
+ * @param {Object} data - Datos de la transacción ingresada o extraída por OCR
+ * @returns {Promise<Object>}
  */
-async function requestBankVerification(query) {
-  await wait(DEMO_DELAY_MS)
-  return simulateBanescoResponse(query)
-}
-
-function simulateBanescoResponse(query) {
-  const reference = String(query.reference || '').trim()
-
-  if (reference === '111111111') {
-    return {
-      ok: false,
-      code: 'NOT_FOUND',
-      message: 'La transacción no pudo ser localizada.'
-    }
-  }
-
-  if (reference === '999999999') {
-    return {
-      ok: false,
-      code: 'ERROR',
-      message: 'Error al procesar la operación.'
-    }
-  }
-
-  return {
-    ok: true,
-    amount: 'Bs. 150,00',
-    reference: query.reference,
-    date: query.date,
-    bank: query.bank,
-    phone: query.phone
-  }
-}
-
-function toPagoCheckResult(query, bankResponse) {
-  if (!bankResponse.ok && bankResponse.code === 'NOT_FOUND') {
-    return {
-      ...query,
-      status: 'not-found',
-      message: bankResponse.message
-    }
-  }
-
-  if (!bankResponse.ok) {
-    return {
-      ...query,
-      status: 'error',
-      message: bankResponse.message || 'Error al procesar la operación.'
-    }
-  }
-
-  return {
-    ...query,
-    status: 'confirmed',
-    amount: bankResponse.amount,
-    reference: bankResponse.reference,
-    date: bankResponse.date,
-    bank: bankResponse.bank,
-    phone: bankResponse.phone
-  }
-}
-
 export async function verifyPayment(data = {}) {
   const ref = String(data.reference || '').trim()
 
-  // 1. Verificación de seguridad anti-fraude: referencia duplicada
+  // 1. Verificación de seguridad anti-fraude rápida en cliente
   if (ref) {
     const existing = await findMovementByReference(ref, data.bank)
     if (existing) {
@@ -108,7 +61,21 @@ export async function verifyPayment(data = {}) {
     }
   }
 
-  // 2. Consulta con el banco
-  const bankResponse = await requestBankVerification(data)
-  return toPagoCheckResult(data, bankResponse)
+  // 2. Consulta a través del proveedor bancario activo
+  const provider = getVerificationProvider()
+  const result = await provider.verify(data)
+
+  // 3. Normalización de respuesta para la UI
+  return {
+    ...data,
+    status: result.status || (result.ok ? 'confirmed' : 'error'),
+    code: result.code,
+    message: result.message,
+    amount: result.amount || data.amount,
+    reference: result.reference || data.reference,
+    date: result.date || data.date,
+    bank: result.bank || data.bank,
+    phone: result.phone || data.phone,
+    provider: result.provider || provider.id
+  }
 }

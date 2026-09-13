@@ -1,5 +1,5 @@
 import { createWorker } from 'tesseract.js'
-import { BANKS, formatBankLabel } from './banks'
+import { BANKS, formatBankLabel } from './banks.js'
 
 let workerPromise = null
 

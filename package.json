@@ -11,7 +11,8 @@
     "test:security": "node scripts/test_security.js",
     "test:auth": "node scripts/test_auth.js",
     "test:rbac": "node scripts/test_rbac.js",
-    "test:integrity": "node scripts/test_integrity.js"
+    "test:integrity": "node scripts/test_integrity.js",
+    "test:provider": "node scripts/test_verification_provider.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",

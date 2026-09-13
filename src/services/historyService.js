@@ -1,6 +1,6 @@
-import { getSession } from './authService'
-import { isRemoteDbEnabled, remoteRequest } from './supabaseClient'
-import { parseDate } from '../utils/formatters'
+import { getSession } from './authService.js'
+import { isRemoteDbEnabled, remoteRequest } from './supabaseClient.js'
+import { parseDate } from '../utils/formatters.js'
 
 const HISTORY_KEY = 'pagocheck-movements'
 

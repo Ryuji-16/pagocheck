@@ -1,5 +1,5 @@
-import { getTenantConfig } from '../config/tenantConfig'
-import { isRemoteDbEnabled, supabase } from './supabaseClient'
+import { getTenantConfig } from '../config/tenantConfig.js'
+import { isRemoteDbEnabled, supabase } from './supabaseClient.js'
 
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
