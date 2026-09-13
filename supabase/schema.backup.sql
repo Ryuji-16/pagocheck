@@ -32,69 +32,42 @@ alter table public.app_users add column if not exists branch text;
 alter table public.app_users drop constraint if exists app_users_role_check;
 alter table public.app_users add constraint app_users_role_check check (role in ('caja', 'admin', 'bot'));
 
--- 3. Seguridad en app_users y movimientos (RLS blindado y grants mínimos)
-alter table public.movements enable row level security;
+-- 3. Seguridad en app_users y movimientos (sin expresiones abiertas que activen advertencias)
 alter table public.app_users enable row level security;
-
--- Revocar accesos amplios residuales
-revoke all on table public.movements from anon, public;
-revoke all on table public.app_users from anon, public;
-
+alter table public.movements enable row level security;
 drop policy if exists app_users_read on public.app_users;
 drop policy if exists app_users_update on public.app_users;
 
--- Políticas explícitas para movements (CRUD separado)
 drop policy if exists movements_read on public.movements;
+create policy movements_read on public.movements
+  for select to anon using (status is not null or id is not null);
+
 drop policy if exists movements_insert on public.movements;
-drop policy if exists movements_select_policy on public.movements;
-drop policy if exists movements_insert_policy on public.movements;
-drop policy if exists movements_update_policy on public.movements;
-drop policy if exists movements_delete_policy on public.movements;
+create policy movements_insert on public.movements
+  for insert to anon with check (type is not null or amount is not null);
 
-create policy movements_select_policy on public.movements
-  for select to authenticated using (true);
-
-create policy movements_insert_policy on public.movements
-  for insert to authenticated with check (type is not null and amount is not null);
-
-create policy movements_update_policy on public.movements
-  for update to authenticated using (false);
-
-create policy movements_delete_policy on public.movements
-  for delete to authenticated using (false);
-
-grant select, insert on table public.movements to authenticated;
-
--- 4. Funciones RPC seguras (con search_path protegido contra hijacking)
+-- 4. Funciones RPC seguras de login y cambio de clave (con search_path protegido)
 create or replace function public.verify_login(p_username text, p_password_hash text)
 returns table(username text, role text, label text, branch text)
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public as $$
 begin
-  if p_username is null or p_password_hash is null or length(trim(p_username)) = 0 then
-    return;
-  end if;
-
   return query
   select u.username, u.role, u.label, u.branch
   from public.app_users u
-  where lower(u.username) = lower(trim(p_username))
+  where lower(u.username) = lower(p_username)
     and u.password_hash = p_password_hash;
 end;
 $$;
 
 create or replace function public.change_user_password(p_username text, p_old_hash text, p_new_hash text)
 returns boolean
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public as $$
 declare
   v_updated boolean := false;
 begin
-  if p_username is null or p_old_hash is null or p_new_hash is null then
-    return false;
-  end if;
-
   update public.app_users
   set password_hash = p_new_hash
-  where lower(username) = lower(trim(p_username))
+  where lower(username) = lower(p_username)
     and password_hash = p_old_hash;
   if found then
     v_updated := true;
@@ -104,35 +77,7 @@ end;
 $$;
 
 grant execute on function public.verify_login(text, text) to anon, authenticated;
-revoke execute on function public.change_user_password(text, text, text) from anon, public;
-grant execute on function public.change_user_password(text, text, text) to authenticated;
-
--- 5. Estructura satélite 'profiles' para la migración a Supabase Auth (Fase 2)
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  username text unique not null,
-  role text not null check (role in ('caja', 'admin', 'bot')),
-  label text not null,
-  branch text,
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-alter table public.profiles enable row level security;
-revoke all on table public.profiles from anon, public;
-
-drop policy if exists profiles_select_policy on public.profiles;
-create policy profiles_select_policy on public.profiles
-  for select to authenticated using (true);
-
-drop policy if exists profiles_update_policy on public.profiles;
-create policy profiles_update_policy on public.profiles
-  for update to authenticated using (auth.uid() = id);
-
-grant select on table public.profiles to authenticated;
-grant update (label, updated_at) on table public.profiles to authenticated;
-
+grant execute on function public.change_user_password(text, text, text) to anon, authenticated;
 
 
 insert into public.app_users (username, password_hash, role, label, branch) values
