@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'
+
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
@@ -13,14 +15,38 @@ export function getRemoteConfig() {
   }
 }
 
+const remoteConfig = getRemoteConfig()
+
+export const supabase = isRemoteDbEnabled()
+  ? createClient(remoteConfig.url, remoteConfig.key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    })
+  : null
+
 export async function remoteRequest(path, options = {}) {
   const { url, key } = getRemoteConfig()
   const separator = path.includes('?') ? '&' : '?'
   const target = `${url}/rest/v1/${path.replace(/^\//, '')}${options.single ? `${separator}select=${options.select || '*'}` : ''}`
 
+  let authToken = key
+  if (supabase) {
+    try {
+      const { data } = await supabase.auth.getSession()
+      if (data?.session?.access_token) {
+        authToken = data.session.access_token
+      }
+    } catch {
+      // Usar apikey/anon como fallback
+    }
+  }
+
   const headers = {
     apikey: key,
-    Authorization: `Bearer ${key}`,
+    Authorization: `Bearer ${authToken}`,
     Accept: 'application/json',
     ...(options.body ? { 'Content-Type': 'application/json', Prefer: options.prefer || 'return=representation' } : {})
   }
@@ -50,4 +76,3 @@ export async function remoteRequest(path, options = {}) {
   return { data, error: null }
 }
 
-export const supabase = null

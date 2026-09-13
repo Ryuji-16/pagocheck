@@ -1,5 +1,5 @@
 import { getTenantConfig } from '../config/tenantConfig'
-import { isRemoteDbEnabled, remoteRequest } from './supabaseClient'
+import { isRemoteDbEnabled, supabase } from './supabaseClient'
 
 const SESSION_KEY = 'pagocheck-session'
 const USERS_KEY = 'pagocheck-users'
@@ -7,40 +7,45 @@ const USERS_KEY = 'pagocheck-users'
 const tenantConfig = getTenantConfig()
 const botConfig = tenantConfig.bot || {}
 
+// Metadatos de cuentas para la interfaz y modo local
 const DEFAULT_USERS = {
   // Tienda 1 (Bella Vista)
-  caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
-  caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
-  caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
+  caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
+  caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
+  caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Tienda 2 (Altamira)
-  t2_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
-  t2_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
-  t2_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  t2_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
+  t2_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
+  t2_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Tienda 3 (La Trinidad)
-  t3_caja1: { password: 'caja1', role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
-  t3_caja2: { password: 'caja2', role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
-  t3_caja3: { password: 'caja3', role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
+  t3_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
+  t3_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
+  t3_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Camión Móvil
-  camion_caja1: { password: 'camion', role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping' },
+  camion_caja1: { role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping', localFallbackPassword: 'camion' },
   // Servicios / Bot (WhatsApp / Delivery)
   [botConfig.serviceUsername || 'bot_service']: {
-    password: 'bot',
     role: 'bot',
     label: botConfig.serviceLabel || 'Asistente WhatsApp',
     branch: botConfig.branch || 'WhatsApp / Delivery',
     subtitle: 'Servicios / Bot',
-    icon: 'smart_toy'
+    icon: 'smart_toy',
+    localFallbackPassword: 'bot'
   },
   // Administrador General
-  admin: { password: 'admin123', role: 'admin', label: 'Admin General', branch: '', subtitle: 'Consolidado / Reportes', icon: 'shield_person' }
+  admin: { role: 'admin', label: 'Admin General', branch: '', subtitle: 'Consolidado / Reportes', icon: 'shield_person', localFallbackPassword: 'admin123' }
 }
 
-async function hashPassword(password) {
-  const data = new TextEncoder().encode(`pagocheck:${password}`)
-  const buffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(buffer))
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('')
+/**
+ * Convierte un username amigable (ej: 'caja1') a un correo sintético de Supabase Auth
+ * para no exigir correos a los operadores de caja.
+ *
+ * @param {string} username
+ * @returns {string}
+ */
+export function toAuthEmail(username) {
+  const clean = String(username || '').trim().toLowerCase()
+  return `${clean}@auth.pagocheck.com`
 }
 
 function toUserRecord(value, fallbackRole = 'caja', fallbackBranch = '') {
@@ -70,7 +75,7 @@ function readLocalUsers() {
     stored = {}
   }
 
-  // Eliminar usuario demo si existía previamente en almacenamiento local
+  // Eliminar usuario demo si existía previamente
   if (stored.demo) {
     delete stored.demo
     localStorage.setItem(USERS_KEY, JSON.stringify(stored))
@@ -82,7 +87,7 @@ function readLocalUsers() {
     const saved = stored[username]
     users[username] = {
       ...meta,
-      password: saved ? toUserRecord(saved, meta.role, meta.branch).password : meta.password,
+      password: saved ? toUserRecord(saved, meta.role, meta.branch).password : meta.localFallbackPassword,
       branch: meta.branch || ''
     }
   }
@@ -95,7 +100,7 @@ function writeLocalUsers(users) {
 }
 
 export function isRemoteAuthEnabled() {
-  return isRemoteDbEnabled()
+  return Boolean(isRemoteDbEnabled() && supabase)
 }
 
 export function getDemoAccounts() {
@@ -128,24 +133,15 @@ function writeSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
 }
 
-export async function purgeRemoteDemoUser() {
-  if (isRemoteDbEnabled()) {
-    try {
-      await remoteRequest('app_users?username=eq.demo', { method: 'DELETE' })
-      await remoteRequest('movements?username=eq.demo', { method: 'DELETE' })
-    } catch {
-      // Manejo silencioso si la base no está conectada
-    }
-  }
-}
-
-// Ejecutar limpieza remota de cuenta demo al inicializar
-if (isRemoteDbEnabled()) {
-  purgeRemoteDemoUser()
-}
-
+/**
+ * Autentica al usuario usando Supabase Auth (JWT) o el fallback local en desarrollo offline.
+ *
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<{ ok: boolean, session?: Object, message?: string }>}
+ */
 export async function login(username, password) {
-  const name = String(username || '').trim()
+  const name = String(username || '').trim().toLowerCase()
   const pass = String(password || '')
 
   if (!name || !pass) {
@@ -156,64 +152,53 @@ export async function login(username, password) {
     return { ok: false, message: 'El usuario demo ha sido eliminado del sistema.' }
   }
 
-  if (isRemoteDbEnabled()) {
-    const passwordHash = await hashPassword(pass)
-    let { data, error } = await remoteRequest('rpc/verify_login', {
-      method: 'POST',
-      body: {
-        p_username: name,
-        p_password_hash: passwordHash
+  if (isRemoteAuthEnabled()) {
+    try {
+      const email = toAuthEmail(name)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass
+      })
+
+      if (authError || !authData?.user) {
+        return { ok: false, message: 'Usuario o clave incorrectos.' }
       }
-    })
 
-    // Fallback si la función RPC verify_login aún no fue creada en Supabase
-    if (error) {
-      const fallbackQuery = await remoteRequest(
-        `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,branch,password_hash`
-      )
-      if (fallbackQuery.error) {
-        const fallbackNoBranch = await remoteRequest(
-          `app_users?username=eq.${encodeURIComponent(name)}&select=username,role,label,password_hash`
-        )
-        if (!fallbackNoBranch.error && Array.isArray(fallbackNoBranch.data) && fallbackNoBranch.data.length > 0) {
-          const u = fallbackNoBranch.data[0]
-          if (u.password_hash === passwordHash) {
-            data = [{ username: u.username, role: u.role, label: u.label, branch: '' }]
-            error = null
-          } else {
-            return { ok: false, message: 'Usuario o clave incorrectos.' }
-          }
-        }
-      } else if (Array.isArray(fallbackQuery.data) && fallbackQuery.data.length > 0) {
-        const u = fallbackQuery.data[0]
-        if (u.password_hash === passwordHash) {
-          data = [{ username: u.username, role: u.role, label: u.label, branch: u.branch || '' }]
-          error = null
-        } else {
-          return { ok: false, message: 'Usuario o clave incorrectos.' }
-        }
+      const user = authData.user
+
+      // Obtener los datos de perfil y rol autorizados desde public.profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, role, label, branch, active')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('Error al consultar perfil de usuario:', profileError)
       }
-    }
 
-    if (error) {
-      return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
-    }
+      if (profile && profile.active === false) {
+        await supabase.auth.signOut()
+        return { ok: false, message: 'Esta cuenta ha sido desactivada por administración.' }
+      }
 
-    const row = Array.isArray(data) ? data[0] : data
-    if (!row || !row.username) {
-      return { ok: false, message: 'Usuario o clave incorrectos.' }
-    }
+      const session = {
+        id: user.id,
+        username: profile?.username || name,
+        role: profile?.role || user.user_metadata?.role || 'caja',
+        label: profile?.label || user.user_metadata?.label || name,
+        branch: profile?.branch || user.user_metadata?.branch || ''
+      }
 
-    const session = {
-      username: row.username,
-      role: row.role,
-      label: row.label || row.username,
-      branch: row.branch || ''
+      writeSession(session)
+      return { ok: true, session }
+    } catch (err) {
+      console.error('Error en Supabase Auth:', err)
+      return { ok: false, message: 'No se pudo conectar al servicio de autenticación.' }
     }
-    writeSession(session)
-    return { ok: true, session }
   }
 
+  // Fallback offline / local
   const users = readLocalUsers()
   const user = users[name]
 
@@ -231,61 +216,56 @@ export async function login(username, password) {
   return { ok: true, session }
 }
 
-export function logout() {
+export async function logout() {
+  if (isRemoteAuthEnabled()) {
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // Manejo silencioso en desconexión
+    }
+  }
   localStorage.removeItem(SESSION_KEY)
 }
 
+/**
+ * Actualiza la contraseña del usuario en Supabase Auth o en almacenamiento local.
+ *
+ * @param {string} username
+ * @param {string} currentPassword
+ * @param {string} nextPassword
+ * @returns {Promise<{ ok: boolean, message?: string }>}
+ */
 export async function changePassword(username, currentPassword, nextPassword) {
   if (String(nextPassword || '').length < 6) {
     return { ok: false, message: 'La nueva clave debe tener al menos 6 caracteres.' }
   }
 
-  if (isRemoteDbEnabled()) {
-    const oldHash = await hashPassword(currentPassword)
-    const newHash = await hashPassword(nextPassword)
-    let { data, error } = await remoteRequest('rpc/change_user_password', {
-      method: 'POST',
-      body: {
-        p_username: username,
-        p_old_hash: oldHash,
-        p_new_hash: newHash
-      }
+  if (isRemoteAuthEnabled()) {
+    const email = toAuthEmail(username)
+
+    // 1. Validar la contraseña actual intentando iniciar sesión
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword
     })
 
-    // Fallback si la función change_user_password aún no existe en Supabase
-    if (error) {
-      const checkUser = await remoteRequest(
-        `app_users?username=eq.${encodeURIComponent(username)}&select=username,password_hash`
-      )
-      if (!checkUser.error && Array.isArray(checkUser.data) && checkUser.data.length > 0) {
-        if (checkUser.data[0].password_hash !== oldHash) {
-          return { ok: false, message: 'La clave actual no es correcta.' }
-        }
-        const updateRes = await remoteRequest(
-          `app_users?username=eq.${encodeURIComponent(username)}`,
-          {
-            method: 'PATCH',
-            body: { password_hash: newHash }
-          }
-        )
-        if (!updateRes.error) {
-          data = true
-          error = null
-        }
-      }
-    }
-
-    if (error) {
-      return { ok: false, message: `No se pudo conectar a la base: ${error.message}` }
-    }
-
-    if (!data) {
+    if (signInError) {
       return { ok: false, message: 'La clave actual no es correcta.' }
+    }
+
+    // 2. Actualizar la contraseña en Supabase Auth
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: nextPassword
+    })
+
+    if (updateError) {
+      return { ok: false, message: updateError.message || 'No se pudo actualizar la clave.' }
     }
 
     return { ok: true }
   }
 
+  // Fallback local
   const users = readLocalUsers()
   const user = users[username]
 

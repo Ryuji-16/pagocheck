@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:security": "node scripts/test_security.js"
+    "test:security": "node scripts/test_security.js",
+    "test:auth": "node scripts/test_auth.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
