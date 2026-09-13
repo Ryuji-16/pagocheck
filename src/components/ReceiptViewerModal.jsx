@@ -1,12 +1,50 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   getBankInfo,
   formatMovementDate,
   formatBs
 } from '../utils/formatters'
+import { resolveReceiptUrl } from '../services/storageService.js'
 import './css/ReceiptViewerModal.css'
 
 function ReceiptViewerModal({ item, onClose }) {
+  const rawImage = item?.receipt_image || ''
+  const isDirectImage =
+    rawImage.startsWith('data:') ||
+    rawImage.startsWith('http://') ||
+    rawImage.startsWith('https://') ||
+    rawImage.startsWith('blob:')
+  const needsFetch = Boolean(rawImage && rawImage !== 'purged' && !isDirectImage)
+
+  const [remoteUrl, setRemoteUrl] = useState('')
+  const [isLoadingRemote, setIsLoadingRemote] = useState(needsFetch)
+
+  useEffect(() => {
+    if (!needsFetch) return
+
+    let isMounted = true
+
+    resolveReceiptUrl(rawImage)
+      .then((url) => {
+        if (isMounted) {
+          setRemoteUrl(url)
+          setIsLoadingRemote(false)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoadingRemote(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [needsFetch, rawImage])
+
+  const resolvedUrl = isDirectImage ? rawImage : remoteUrl
+  const isLoadingUrl = needsFetch && isLoadingRemote
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
@@ -69,10 +107,14 @@ function ReceiptViewerModal({ item, onClose }) {
                 ℹ️ Comprobante archivado en texto. La captura de imagen fue purgada automáticamente tras 7 días para optimizar el almacenamiento, pero todos los datos de auditoría se conservan en el sistema.
               </p>
             </div>
-          ) : item.receipt_image ? (
+          ) : isLoadingUrl ? (
+            <div className="receipt-viewer-empty" role="status">
+              ⏳ Obteniendo comprobante seguro...
+            </div>
+          ) : resolvedUrl ? (
             <div className="receipt-viewer-img-container">
               <img
-                src={item.receipt_image}
+                src={resolvedUrl}
                 alt={`Comprobante de referencia ${item.reference || 'pago móvil'}`}
                 className="receipt-viewer-img"
               />
@@ -161,6 +203,17 @@ function ReceiptViewerModal({ item, onClose }) {
         </div>
 
         <div className="receipt-viewer-footer">
+          {resolvedUrl && !isPurged && (
+            <a
+              href={resolvedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="receipt-viewer-open-btn"
+              title="Abrir imagen completa en nueva pestaña"
+            >
+              🔍 Ver tamaño completo
+            </a>
+          )}
           <button
             type="button"
             className="receipt-viewer-done-btn"

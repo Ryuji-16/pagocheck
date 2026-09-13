@@ -209,7 +209,30 @@
   border-top: 1px solid var(--card-border);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
   background: rgba(0, 0, 0, 0.05);
+}
+
+.receipt-viewer-open-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--card-border);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: var(--transition-theme);
+}
+
+.receipt-viewer-open-btn:hover {
+  background: var(--primary-light, rgba(255, 255, 255, 0.15));
 }
 
 .receipt-viewer-done-btn {

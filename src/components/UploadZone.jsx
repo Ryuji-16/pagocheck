@@ -6,6 +6,9 @@ import { verifyPayment } from "../services/verificationService";
 import { saveMovement } from '../services/historyService'
 import { extractPaymentData } from "../services/ocrService";
 import { compressImageToDataUrl } from '../utils/imageUtils'
+import { uploadReceiptImage } from '../services/storageService'
+import { isRemoteDbEnabled } from '../services/supabaseClient'
+import { getSession } from '../services/authService'
 import './css/UploadZone.css'
 import './css/Modals.css'
 
@@ -90,32 +93,51 @@ function UploadZone({ onBack }) {
   }
 
   async function handleVerify(data = {}) {
-  setIsVerifying(true)
-  setVerificationResult(null)
+    setIsVerifying(true)
+    setVerificationResult(null)
 
-  try {
-    const result = await verifyPayment(data)
-    await saveMovement({
-      type: 'validacion',
-      status: result.status,
-      amount: result.amount || '',
-      reference: result.reference || data.reference || '',
-      phone: result.phone || data.phone || '',
-      bank: result.bank || data.bank || '',
-      receipt_image: receiptImage || ''
-    })
-    setVerificationResult(result)
-  } catch (error) {
-    console.error('Error al verificar el pago:', error)
+    try {
+      const result = await verifyPayment(data)
 
-    setVerificationResult({
-      status: 'error',
-      message: 'No se pudo completar la verificación.'
-    })
-  } finally {
-    setIsVerifying(false)
+      let receiptPath = receiptImage || ''
+
+      // Si hay archivo de comprobante y conexión a Supabase, subir al bucket privado
+      if (file && isRemoteDbEnabled()) {
+        try {
+          const session = getSession()
+          const uploadRes = await uploadReceiptImage(file, {
+            branch: session?.branch,
+            reference: result.reference || data.reference
+          })
+          if (uploadRes?.path) {
+            receiptPath = uploadRes.path
+          }
+        } catch (storageErr) {
+          console.warn('Error al subir a Supabase Storage, usando fallback local:', storageErr)
+        }
+      }
+
+      await saveMovement({
+        type: 'validacion',
+        status: result.status,
+        amount: result.amount || '',
+        reference: result.reference || data.reference || '',
+        phone: result.phone || data.phone || '',
+        bank: result.bank || data.bank || '',
+        receipt_image: receiptPath
+      })
+      setVerificationResult(result)
+    } catch (error) {
+      console.error('Error al verificar el pago:', error)
+
+      setVerificationResult({
+        status: 'error',
+        message: 'No se pudo completar la verificación.'
+      })
+    } finally {
+      setIsVerifying(false)
+    }
   }
-}
 
   async function handlePasteButton() {
   try {
