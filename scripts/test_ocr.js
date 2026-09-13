@@ -95,7 +95,7 @@ async function run() {
   assert(mercantilRes.amount === 'Bs. 80,00', `Monto normalizado: ${mercantilRes.amount}`)
 
   // 5. Comprobante BBVA Provincial y Bancamiga
-  console.log('\n• [5/6] Probando comprobante BBVA Provincial y Bancamiga...')
+  console.log('\n• [5/8] Probando comprobante BBVA Provincial y Bancamiga...')
   const provincialText = `
     BBVA Provincial
     Nº de operación: 54321098
@@ -119,8 +119,46 @@ async function run() {
   assert(bancamigaRes.reference === '778899', `Secuencia Bancamiga: ${bancamigaRes.reference}`)
   assert(bancamigaRes.bank.includes('Bancamiga'), `Banco detectado Bancamiga: ${bancamigaRes.bank}`)
 
-  // 6. Validación de Campos Faltantes y Calificación de Calidad
-  console.log('\n• [6/6] Probando evaluación de campos faltantes y advertencias...')
+  // 6. Comprobante Ubii / Pago Móvil (caso real reportado por el usuario)
+  console.log('\n• [6/8] Probando comprobante Ubii / Pago Móvil (Venezolano de Crédito)...')
+  const ubiiText = `
+    RETIRO PAGO MOVIL
+    Bs. 1.162,33
+
+    Fechay Hora 10 agosto 2026 0147 pr
+    Referencia 000000755544 C)
+    ies BANCARIGE
+    Número (0424) 271-24-08
+    códula 1-306725024
+    Banco origen VENEZOLANO DE CRÉDITO
+    Cuenta/Teléfono (0414) 269-83-01
+    códula vasena7s
+  `
+  const ubiiRes = parsePaymentText(ubiiText)
+  assert(ubiiRes.reference === '000000755544', `Referencia Ubii exacta: ${ubiiRes.reference}`)
+  assert(ubiiRes.bank.includes('Venezolano de Crédito'), `Banco emisor Ubii detectado: ${ubiiRes.bank}`)
+  assert(ubiiRes.date === '10/08/2026', `Fecha Ubii parseada: ${ubiiRes.date}`)
+  assert(ubiiRes.amount === 'Bs. 1.162,33', `Monto Ubii extraído: ${ubiiRes.amount}`)
+  assert(ubiiRes.phone === '0414-2698301', `Teléfono emisor Ubii (no destino): ${ubiiRes.phone}`)
+  assert(ubiiRes.validation.isComplete === true, 'Comprobante Ubii 100% completo')
+  assert(ubiiRes.validation.confidence === 100, `Confianza 100%: ${ubiiRes.validation.confidence}`)
+
+  // 7. Pruebas de robustez contra ruido OCR (ruido de 13 dígitos y fechas erróneas de teléfonos)
+  console.log('\n• [7/8] Probando robustez contra ruido OCR (13 dígitos y fragmentos telefónicos)...')
+  const noisyRefText = `Referencia 2000000755544 C)`
+  const noisyRefRes = parsePaymentText(noisyRefText)
+  assert(noisyRefRes.reference === '000000755544', `Ruido inicial '2' eliminado de RRN de 12 dígitos: ${noisyRefRes.reference}`)
+
+  const phoneAsDateText = `Número (0424) 21-24-08 Fechay Hora 10 agosto 2026`
+  const phoneAsDateRes = parsePaymentText(phoneAsDateText)
+  assert(phoneAsDateRes.date === '10/08/2026', `Fragmento de teléfono 21-24-08 descartado en favor de fecha real: ${phoneAsDateRes.date}`)
+
+  const ocrTypoPhoneText = `Banco origen VENEZOLANO DE CRÉDITO Cuenta/reléfono (0414) 269-83-O1`
+  const ocrTypoPhoneRes = parsePaymentText(ocrTypoPhoneText)
+  assert(ocrTypoPhoneRes.phone === '0414-2698301', `Teléfono con 'reléfono' y letra 'O' corregido: ${ocrTypoPhoneRes.phone}`)
+
+  // 8. Validación de Campos Faltantes y Calificación de Calidad
+  console.log('\n• [8/8] Probando evaluación de campos faltantes y advertencias...')
   const partialData = {
     reference: '123456',
     bank: '0134 — Banesco'

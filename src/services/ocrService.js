@@ -22,42 +22,29 @@ async function prepareImage(file) {
 
     const bitmap = await createImageBitmap(file)
     const longest = Math.max(bitmap.width, bitmap.height)
-    let scale = 1
-    if (longest > 1800) scale = 1800 / longest
-    if (longest < 900) scale = 900 / longest
 
+    // Si la imagen tiene dimensiones estándar (<= 2000px), retornar el archivo original
+    // directamente para no degradar el texto ni introducir artefactos de compresión.
+    if (longest <= 2000) {
+      bitmap.close?.()
+      return file
+    }
+
+    // Reducir proporcionalmente fotos gigantescas para evitar desbordamiento de memoria
+    const scale = 2000 / longest
     const width = Math.max(1, Math.round(bitmap.width * scale))
     const height = Math.max(1, Math.round(bitmap.height * scale))
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return file
+    if (!ctx) {
+      bitmap.close?.()
+      return file
+    }
 
     ctx.drawImage(bitmap, 0, 0, width, height)
     bitmap.close?.()
-
-    const sampleW = Math.min(160, width)
-    const sampleH = Math.min(160, height)
-    const sx = Math.max(0, Math.floor((width - sampleW) / 2))
-    const sy = Math.max(0, Math.floor((height - sampleH) / 2))
-    const sample = ctx.getImageData(sx, sy, sampleW, sampleH)
-    let total = 0
-    const pixels = sample.data.length / 4
-    for (let i = 0; i < sample.data.length; i += 4) {
-      total += (sample.data[i] + sample.data[i + 1] + sample.data[i + 2]) / 3
-    }
-    const average = total / pixels
-
-    if (average < 70) {
-      const all = ctx.getImageData(0, 0, width, height)
-      for (let i = 0; i < all.data.length; i += 4) {
-        all.data[i] = 255 - all.data[i]
-        all.data[i + 1] = 255 - all.data[i + 1]
-        all.data[i + 2] = 255 - all.data[i + 2]
-      }
-      ctx.putImageData(all, 0, 0)
-    }
 
     const blob = await new Promise((resolve) => {
       canvas.toBlob((result) => resolve(result || file), 'image/png')
@@ -80,13 +67,13 @@ export function digitsOnly(value) {
 
 /**
  * Corrige confusiones típicas de OCR en cadenas que deberían ser numéricas
- * (ej: letras 'O', 'o' por '0'; 'I', 'l', '|' por '1'; 'S', 's' por '5').
+ * (ej: letras 'O', 'o' por '0'; 'I', 'l', '|' por '1'; 'S', 's' por '5'; 'B' por '8').
  */
 export function cleanOcrDigits(value) {
   if (!value) return ''
   return String(value)
     .replace(/[Oo]/g, '0')
-    .replace(/[Il|]/g, '1')
+    .replace(/[Il|i]/g, '1')
     .replace(/[Ss]/g, '5')
     .replace(/[Zz]/g, '2')
     .replace(/[Bb]/g, '8')
@@ -94,8 +81,9 @@ export function cleanOcrDigits(value) {
 }
 
 export function formatPhone(value) {
-  const all = digitsOnly(value).replace(/^58/, '')
-  const local = all.startsWith('0') ? all : `0${all}`
+  const cleaned = cleanOcrDigits(value)
+  const withoutCountry = cleaned.replace(/^58/, '')
+  const local = withoutCountry.startsWith('0') ? withoutCountry : `0${withoutCountry}`
   if (local.length !== 11 || !local.startsWith('04')) return ''
   return `${local.slice(0, 4)}-${local.slice(4)}`
 }
@@ -108,42 +96,40 @@ export function normalizeOcr(text) {
 }
 
 const RECEIVER_LABEL =
-  /beneficiar|receptor|destino|comercio|tienda|recib|celular de destino|telf beneficiario/
+  /beneficiar|receptor|destino|comercio|tienda|recib|celular(?:\s*de)?\s*destino|telf(?:\s*de)?\s*destino|telf\s*beneficiario|n[uú]mero(?:\s*de)?\s*destino/i
 const PAYER_LABEL =
-  /pagador|emisor|remitente|ordenante|celular de origen|n[uú]mero celular de origen|cuenta\/tel[eé]fono|telefono origen|n[uú]mero origen|banco origen.{0,40}/
+  /pagador|emisor|remitente|ordenante|celular(?:\s*de)?\s*origen|n[uú]mero(?:\s*celular)?(?:\s*de)?\s*origen|cuenta\s*\/\s*(?:t[eé]l[eé]f|rel[eé]f|cel|m[oó]vil|telf)|tel[eé]fono(?:\s*de)?\s*origen|n[uú]mero(?:\s*de)?\s*origen|banco\s*(?:de\s*)?origen/i
 
 export function extractPayerPhone(text) {
   const compact = text.replace(/\s+/g, ' ')
-  const phonePattern = /(?:\+?58)?\(?0?4\d{2}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}/g
+  // Reconoce teléfonos con posibles caracteres OCR confusos (ej: O414, 269-83-O1)
+  const phonePattern =
+    /(?:(?:\+?58\s*)?\(?0?[124][0-9OlSsBb]{2}\)?[\s.-]?[0-9OlSsBb]{3}[\s.-]?[0-9OlSsBb]{2}[\s.-]?[0-9OlSsBb]{2}|(?:\+?58\s*)?0?[124][0-9OlSsBb]{9})/gi
   const payerPhones = []
+  const candidatePhones = []
   let match
 
   while ((match = phonePattern.exec(compact))) {
     const formatted = formatPhone(match[0])
     if (!formatted) continue
 
-    const start = Math.max(0, match.index - 56)
+    const start = Math.max(0, match.index - 120)
     const context = compact.slice(start, match.index + match[0].length).toLowerCase()
 
     if (RECEIVER_LABEL.test(context)) continue
-    if (PAYER_LABEL.test(context)) payerPhones.push(formatted)
-  }
 
-  // Si no se encontró explícitamente como pagador, usar el primer teléfono que no sea receptor
-  if (!payerPhones[0]) {
-    phonePattern.lastIndex = 0
-    while ((match = phonePattern.exec(compact))) {
-      const formatted = formatPhone(match[0])
-      if (!formatted) continue
-      const start = Math.max(0, match.index - 50)
-      const context = compact.slice(start, match.index + match[0].length).toLowerCase()
-      if (!RECEIVER_LABEL.test(context)) {
-        return formatted
-      }
+    if (PAYER_LABEL.test(context)) {
+      payerPhones.push(formatted)
+    } else {
+      candidatePhones.push(formatted)
     }
   }
 
-  return payerPhones[0] || ''
+  if (payerPhones.length > 0) {
+    return payerPhones[0]
+  }
+
+  return candidatePhones[0] || ''
 }
 
 export const BANK_ALIASES = {
@@ -262,19 +248,64 @@ const MONTHS = {
   dic: '12'
 }
 
+export function isValidDate(d, m, y) {
+  const day = Number(d)
+  const month = Number(m)
+  const year = Number(String(y).length === 2 ? `20${y}` : y)
+  if (isNaN(day) || isNaN(month) || isNaN(year)) return false
+  if (month < 1 || month > 12) return false
+  if (day < 1 || day > 31) return false
+  if (year < 2020 || year > 2035) return false
+  const maxDays = new Date(year, month, 0).getDate()
+  return day <= maxDays
+}
+
 export function extractDate(compact) {
-  const numeric = compact.match(/\b(\d{2})[/-](\d{2})[/-](\d{2,4})\b/)
-  if (numeric) {
-    const year = numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3]
-    return `${numeric[1]}/${numeric[2]}/${year}`
+  const norm = normalizeOcr(compact)
+
+  // 1. Fecha nombrada con etiqueta explícita (ej: 'Fechay Hora 10 agosto 2026', 'Fecha: 13 de septiembre de 2026')
+  const labeledNamed = norm.match(
+    /(?:fecha(?:\s*y\s*hora|yhora|\s*hora)?(?:\s*de\s*la\s*operaci[oó]n)?(?:\s*valor)?)\s*[-:]?\s*(\d{1,2})\s+(?:de\s+)?([a-z]+)\s+(?:de\s+)?(\d{4})/i
+  )
+  if (labeledNamed && MONTHS[labeledNamed[2]]) {
+    const day = labeledNamed[1].padStart(2, '0')
+    const month = MONTHS[labeledNamed[2]]
+    const year = labeledNamed[3]
+    if (isValidDate(day, month, year)) return `${day}/${month}/${year}`
   }
 
-  const named = normalizeOcr(compact).match(
-    /\b(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+(?:de\s+)?(\d{4})\b/
+  // 2. Fecha numérica con etiqueta explícita (ej: 'Fecha: 12/09/2026', 'Fecha y hora: 10/08/2026')
+  const labeledNumeric = compact.match(
+    /(?:fecha(?:\s*y\s*hora|yhora|\s*hora)?(?:\s*de\s*la\s*operaci[oó]n)?(?:\s*valor)?)\s*[-:]?\s*(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/i
   )
-  if (named) {
+  if (labeledNumeric) {
+    const day = labeledNumeric[1].padStart(2, '0')
+    const month = labeledNumeric[2].padStart(2, '0')
+    const year = labeledNumeric[3].length === 2 ? `20${labeledNumeric[3]}` : labeledNumeric[3]
+    if (isValidDate(day, month, year)) return `${day}/${month}/${year}`
+  }
+
+  // 3. Fecha nombrada sin etiqueta explícita (ej: '10 agosto 2026')
+  const named = norm.match(
+    /\b(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+(?:de\s+)?(\d{4})\b/i
+  )
+  if (named && MONTHS[named[2]]) {
     const day = named[1].padStart(2, '0')
-    return `${day}/${MONTHS[named[2]]}/${named[3]}`
+    const month = MONTHS[named[2]]
+    const year = named[3]
+    if (isValidDate(day, month, year)) return `${day}/${month}/${year}`
+  }
+
+  // 4. Fecha numérica sin etiqueta explícita (estrictamente validada para no confundir fragmentos telefónicos)
+  const numericPattern = /\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/g
+  let match
+  while ((match = numericPattern.exec(compact))) {
+    const day = match[1].padStart(2, '0')
+    const month = match[2].padStart(2, '0')
+    const year = match[3].length === 2 ? `20${match[3]}` : match[3]
+    if (isValidDate(day, month, year)) {
+      return `${day}/${month}/${year}`
+    }
   }
 
   return ''
@@ -285,31 +316,39 @@ export function extractDate(compact) {
  * sanitizando posibles errores visuales de OCR y evitando falsos positivos de estado.
  */
 export function extractReference(compact) {
-  // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, etc.)
-  const refPattern =
-    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*(?:de\s*)?referencia|n[°º]\.?\s*(?:de\s*)?referencia|referencia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([0-9A-Za-z|]{4,16})/gi
+  // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, Ubii, etc.)
+  const refLabelRegex =
+    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*(?:de\s*)?referencia|n[°º]\.?\s*(?:de\s*)?referencia|referencia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([^\n\r]{1,40})/gi
 
   let match
-  while ((match = refPattern.exec(compact))) {
-    const candidate = match[1]
-    // Si solo tiene letras y ningún dígito real, descartar (ej: "Exitosa", "Aprobada")
-    if (/^[a-zA-Z]+$/.test(candidate) && !/[0-9]/.test(candidate)) {
-      continue
-    }
-    const digits = cleanOcrDigits(candidate)
-    if (digits.length >= 4) {
-      return digits
+  while ((match = refLabelRegex.exec(compact))) {
+    const snippet = match[1]
+    const tokens = snippet.split(/[\s,;:()[\]{}]+/)
+    for (const token of tokens) {
+      if (/^[a-zA-Z]+$/.test(token) && !/[0-9]/.test(token)) continue
+      let digits = cleanOcrDigits(token)
+
+      // Si tiene 13 dígitos y empieza por un dígito seguido de 3+ ceros (ej: '2000000755544'),
+      // el primer dígito es ruido visual de OCR adherido al número estándar de 12 dígitos (RRN).
+      if (digits.length === 13 && /^([1-9])(0{3,}\d{6,})$/.test(digits)) {
+        digits = digits.slice(1)
+      }
+
+      if (digits.length >= 4) {
+        return digits
+      }
     }
   }
 
-  // Patrón 2: Referencia aislada tras dos puntos
-  const fallbackPattern = /\bref\b\s*[:.-]?\s*([0-9A-Za-z|]{4,14})/gi
+  // Patrón 2: Referencia aislada tras dos puntos o palabra ref
+  const fallbackPattern = /\bref\b\s*[:.-]?\s*([0-9A-Za-z|]{4,16})/gi
   while ((match = fallbackPattern.exec(compact))) {
     const candidate = match[1]
-    if (/^[a-zA-Z]+$/.test(candidate) && !/[0-9]/.test(candidate)) {
-      continue
+    if (/^[a-zA-Z]+$/.test(candidate) && !/[0-9]/.test(candidate)) continue
+    let digits = cleanOcrDigits(candidate)
+    if (digits.length === 13 && /^([1-9])(0{3,}\d{6,})$/.test(digits)) {
+      digits = digits.slice(1)
     }
-    const digits = cleanOcrDigits(candidate)
     if (digits.length >= 4) {
       return digits
     }
@@ -407,7 +446,7 @@ export function validatePaymentData(data = {}) {
   // 4. Teléfono (10 puntos)
   if (!data.phone || String(data.phone).trim() === '') {
     missingFields.push('phone')
-  } else if (!/^04\d{2}-\d{7}$/.test(String(data.phone).trim())) {
+  } else if (!/^04\d{2}-\d{7}$/.test(String(data.phone).trim()) && !/^04\d{9}$/.test(String(data.phone).trim())) {
     warnings.push('El teléfono no cumple el formato móvil venezolano estándar (04XX-XXXXXXX).')
     score += 5
   } else {
@@ -417,6 +456,9 @@ export function validatePaymentData(data = {}) {
   // 5. Fecha (10 puntos)
   if (!data.date || String(data.date).trim() === '') {
     missingFields.push('date')
+  } else if (!/^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/.test(String(data.date).trim())) {
+    warnings.push('La fecha no cumple el formato estándar DD/MM/AAAA.')
+    score += 5
   } else {
     score += 10
   }

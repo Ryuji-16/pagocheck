@@ -40,11 +40,17 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
   const validation = initialValues.validation || null
 
   function triggerVerification() {
+    const rawPhone = phone.replace(/[^\d]/g, '')
+    const formattedPhone =
+      rawPhone.length === 11 && rawPhone.startsWith('04')
+        ? `${rawPhone.slice(0, 4)}-${rawPhone.slice(4)}`
+        : phone.trim()
+
     onVerify({
       date: date.trim(),
       reference: reference.trim(),
       amount: amount.trim(),
-      phone: phone.trim(),
+      phone: formattedPhone,
       bank
     })
   }
@@ -195,10 +201,17 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
           Teléfono
           <input
             type="tel"
+            inputMode="numeric"
+            maxLength={12}
             value={phone}
-            placeholder="Número de teléfono"
+            placeholder="04XX-XXXXXXX"
             onChange={(event) => {
-              setPhone(event.target.value)
+              const raw = event.target.value.replace(/[^\d]/g, '').slice(0, 11)
+              let next = raw
+              if (raw.length > 4) {
+                next = `${raw.slice(0, 4)}-${raw.slice(4)}`
+              }
+              setPhone(next)
               setFormError('')
             }}
           />
