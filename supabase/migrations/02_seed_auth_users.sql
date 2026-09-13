@@ -154,28 +154,32 @@ $$;
 
 -- 4. Semilla de cuentas del sistema
 -- Tienda 1 (Bella Vista)
+select public.seed_pago_user('admin_t1', 'admin1', 'admin', 'Admin Bella Vista', 'Tienda 1 (Bella Vista)');
 select public.seed_pago_user('caja1', 'caja1', 'caja', 'Caja 1', 'Tienda 1 (Bella Vista)');
 select public.seed_pago_user('caja2', 'caja2', 'caja', 'Caja 2', 'Tienda 1 (Bella Vista)');
 select public.seed_pago_user('caja3', 'caja3', 'caja', 'Caja 3', 'Tienda 1 (Bella Vista)');
 
 -- Tienda 2 (Altamira)
+select public.seed_pago_user('admin_t2', 'admin2', 'admin', 'Admin Altamira', 'Tienda 2 (Altamira)');
 select public.seed_pago_user('t2_caja1', 'caja1', 'caja', 'Caja 1', 'Tienda 2 (Altamira)');
 select public.seed_pago_user('t2_caja2', 'caja2', 'caja', 'Caja 2', 'Tienda 2 (Altamira)');
 select public.seed_pago_user('t2_caja3', 'caja3', 'caja', 'Caja 3', 'Tienda 2 (Altamira)');
 
 -- Tienda 3 (La Trinidad)
+select public.seed_pago_user('admin_t3', 'admin3', 'admin', 'Admin La Trinidad', 'Tienda 3 (La Trinidad)');
 select public.seed_pago_user('t3_caja1', 'caja1', 'caja', 'Caja 1', 'Tienda 3 (La Trinidad)');
 select public.seed_pago_user('t3_caja2', 'caja2', 'caja', 'Caja 2', 'Tienda 3 (La Trinidad)');
 select public.seed_pago_user('t3_caja3', 'caja3', 'caja', 'Caja 3', 'Tienda 3 (La Trinidad)');
 
 -- Camión Móvil
+select public.seed_pago_user('admin_camion', 'admincamion', 'admin', 'Admin Camión', 'Camión Móvil');
 select public.seed_pago_user('camion_caja1', 'camion', 'caja', 'Caja Móvil', 'Camión Móvil');
 
 -- Servicio / Bot
 select public.seed_pago_user('bot_service', 'bot', 'bot', 'Asistente WhatsApp', 'WhatsApp / Delivery');
 
--- Administrador General
-select public.seed_pago_user('admin', 'admin123', 'admin', 'Admin General', null);
+-- Dueño de la Empresa (Administrador General de todas las sucursales)
+select public.seed_pago_user('admin', 'admin123', 'admin', 'Dueño / Admin General', null);
 
 -- Limpieza preventiva: eliminar función de seed para que no quede expuesta
 drop function if exists public.seed_pago_user(text, text, text, text, text);

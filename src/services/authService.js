@@ -10,18 +10,22 @@ const botConfig = tenantConfig.bot || {}
 // Metadatos de cuentas para la interfaz y modo local
 const DEFAULT_USERS = {
   // Tienda 1 (Bella Vista)
+  admin_t1: { role: 'admin', label: 'Admin Bella Vista', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin1' },
   caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
   caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
   caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Tienda 2 (Altamira)
+  admin_t2: { role: 'admin', label: 'Admin Altamira', branch: 'Tienda 2 (Altamira)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin2' },
   t2_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
   t2_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
   t2_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Tienda 3 (La Trinidad)
+  admin_t3: { role: 'admin', label: 'Admin La Trinidad', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin3' },
   t3_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
   t3_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
   t3_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
   // Camión Móvil
+  admin_camion: { role: 'admin', label: 'Admin Camión', branch: 'Camión Móvil', subtitle: 'Supervisor Ruta Móvil', icon: 'supervisor_account', localFallbackPassword: 'admincamion' },
   camion_caja1: { role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping', localFallbackPassword: 'camion' },
   // Servicios / Bot (WhatsApp / Delivery)
   [botConfig.serviceUsername || 'bot_service']: {
@@ -32,8 +36,8 @@ const DEFAULT_USERS = {
     icon: 'smart_toy',
     localFallbackPassword: 'bot'
   },
-  // Administrador General
-  admin: { role: 'admin', label: 'Admin General', branch: '', subtitle: 'Consolidado / Reportes', icon: 'shield_person', localFallbackPassword: 'admin123' }
+  // Dueño de la Empresa (Administrador General de todas las sucursales)
+  admin: { role: 'admin', label: 'Dueño / Admin General', branch: '', subtitle: 'Dueño de la Empresa / Consolidado Total', icon: 'shield_person', localFallbackPassword: 'admin123' }
 }
 
 /**

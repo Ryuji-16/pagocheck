@@ -16,7 +16,7 @@ import './css/MovementsPagination.css'
 function Movements({ session, onBack }) {
   const [items, setItems] = useState([])
   const [activeTab, setActiveTab] = useState('all') // 'all' | 'validacion' | 'vuelto'
-  const [selectedBranch, setSelectedBranch] = useState('')
+  const [selectedBranch, setSelectedBranch] = useState(session?.branch || '')
   const [selectedCaja, setSelectedCaja] = useState('')
   const [selectedBank, setSelectedBank] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -42,8 +42,13 @@ function Movements({ session, onBack }) {
     }
   }, [session])
 
+  const userBranch = session?.branch || ''
+
   // Opciones de sucursal para el selector de Admin
   const branchesOptions = useMemo(() => {
+    if (userBranch) {
+      return [userBranch]
+    }
     const set = new Set()
     for (const item of items) {
       if (item.branch) set.add(item.branch)
@@ -58,7 +63,7 @@ function Movements({ session, onBack }) {
       set.add(b)
     }
     return Array.from(set)
-  }, [items])
+  }, [items, userBranch])
 
   // Opciones de caja para el selector de Admin (filtradas por sucursal si hay una seleccionada)
   const cajasOptions = useMemo(() => {

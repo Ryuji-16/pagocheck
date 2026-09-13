@@ -202,7 +202,7 @@ export async function listMovements(session) {
   if (isRemoteDbEnabled()) {
     const filter =
       session.role === 'admin'
-        ? ''
+        ? (session.branch ? `&branch=eq.${encodeURIComponent(session.branch)}` : '')
         : `&username=eq.${encodeURIComponent(session.username)}`
 
     let { data, error } = await remoteRequest(
@@ -235,7 +235,10 @@ export async function listMovements(session) {
   }
 
   const all = readAllLocal()
-  if (session.role === 'admin') return all
+  if (session.role === 'admin') {
+    if (!session.branch) return all
+    return all.filter((item) => item.branch === session.branch)
+  }
   return all.filter((item) => item.username === session.username)
 }
 
