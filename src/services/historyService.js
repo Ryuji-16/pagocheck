@@ -143,7 +143,8 @@ export async function saveMovement(entry) {
     bank: entry.bank || '',
     cedula: entry.cedula || '',
     note: entry.note || '',
-    receipt_image: entry.receipt_image || ''
+    receipt_image: entry.receipt_image || '',
+    provider: entry.provider || 'banesco'
   }
 
   if (isRemoteDbEnabled()) {
@@ -154,7 +155,7 @@ export async function saveMovement(entry) {
     })
 
     // Fallback si alguna columna aún no existe en Supabase
-    if (error && (item.receipt_image || item.branch)) {
+    if (error && (item.receipt_image || item.branch || item.provider)) {
       const fallbackItem = { ...item }
       delete fallbackItem.receipt_image
       let retryResult = await remoteRequest('movements', {
@@ -162,6 +163,14 @@ export async function saveMovement(entry) {
         body: fallbackItem,
         prefer: 'return=representation'
       })
+      if (retryResult.error && fallbackItem.provider) {
+        delete fallbackItem.provider
+        retryResult = await remoteRequest('movements', {
+          method: 'POST',
+          body: fallbackItem,
+          prefer: 'return=representation'
+        })
+      }
       if (retryResult.error && fallbackItem.branch) {
         delete fallbackItem.branch
         retryResult = await remoteRequest('movements', {
@@ -175,6 +184,14 @@ export async function saveMovement(entry) {
     }
 
     if (error) {
+      const errMsg = String(error.message || '').toLowerCase()
+      if (errMsg.includes('duplicate') || errMsg.includes('unique') || error.status === 409 || error.code === '23505') {
+        return {
+          error: 'DUPLICATE_REFERENCE',
+          code: 'DUPLICATE',
+          message: '⚠️ Referencia duplicada: este pago ya fue registrado en el banco anteriormente.'
+        }
+      }
       console.error('No se pudo guardar el movimiento remoto', error)
       return null
     }
@@ -187,6 +204,18 @@ export async function saveMovement(entry) {
       row.branch = item.branch
     }
     return row ? toListItem(row) : null
+  }
+
+  // Prevención anti-duplicados en modo local para paridad de comportamiento
+  if ((item.status === 'confirmed' || item.status === 'ok') && item.reference && item.bank) {
+    const existing = await findMovementByReference(item.reference, item.bank)
+    if (existing) {
+      return {
+        error: 'DUPLICATE_REFERENCE',
+        code: 'DUPLICATE',
+        message: `⚠️ Referencia duplicada: este pago ya fue registrado en ${existing.label || existing.username}.`
+      }
+    }
   }
 
   const localItem = {
