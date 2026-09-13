@@ -31,7 +31,6 @@ function isValidDisplayDate(value) {
 function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialValues = {} }) {
   const [date, setDate] = useState(initialValues.date || formatToday)
   const [reference, setReference] = useState(initialValues.reference || '')
-  const [amount, setAmount] = useState(initialValues.amount || '')
   const [phone, setPhone] = useState(initialValues.phone || '')
   const [bank, setBank] = useState(initialValues.bank || '')
   const [formError, setFormError] = useState('')
@@ -49,7 +48,7 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
     onVerify({
       date: date.trim(),
       reference: reference.trim(),
-      amount: amount.trim(),
+      amount: initialValues.amount || '',
       phone: formattedPhone,
       bank
     })
@@ -183,19 +182,6 @@ function ManualVerification({ onVerify, onBack, onGoMenu, isVerifying, initialVa
           />
         </label>
 
-        <label>
-          Monto
-          <input
-            type="text"
-            inputMode="decimal"
-            value={amount}
-            placeholder="Ej: Bs. 250,00"
-            onChange={(event) => {
-              setAmount(event.target.value)
-              setFormError('')
-            }}
-          />
-        </label>
 
         <label>
           Teléfono

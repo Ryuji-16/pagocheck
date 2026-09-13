@@ -157,19 +157,23 @@ async function run() {
   const ocrTypoPhoneRes = parsePaymentText(ocrTypoPhoneText)
   assert(ocrTypoPhoneRes.phone === '0414-2698301', `Teléfono con 'reléfono' y letra 'O' corregido: ${ocrTypoPhoneRes.phone}`)
 
-  // 8. Validación de Campos Faltantes y Calificación de Calidad
-  console.log('\n• [8/8] Probando evaluación de campos faltantes y advertencias...')
+  const multiSectionText = `banco destino BANCARIBE Número [E códula 4306725024 banco origen VENEZOLANO DE CRÉDITO Cuentafreléfono (0414) 269-83-01`
+  const multiSectionRes = parsePaymentText(multiSectionText)
+  assert(multiSectionRes.phone === '0414-2698301', `Teléfono pagador con banco destino previo y Cuentafreléfono: ${multiSectionRes.phone}`)
+
+  // 8. Validación de Campos Faltantes y Calificación de Calidad (4 campos requeridos por Banesco)
+  console.log('\n• [8/8] Probando evaluación de campos faltantes y advertencias (API Banesco)...')
   const partialData = {
     reference: '123456',
     bank: '0134 — Banesco'
-    // Faltan amount, phone, date
+    // Faltan phone, date (amount ya no es requerido como input)
   }
   const valResult = validatePaymentData(partialData)
   assert(valResult.isValid === true, 'Es válido para procesar (tiene referencia y banco)')
   assert(valResult.isComplete === false, 'Detecta correctamente que no está completo')
-  assert(valResult.missingFields.includes('amount'), 'Identifica que falta el monto')
   assert(valResult.missingFields.includes('phone'), 'Identifica que falta el teléfono')
   assert(valResult.missingFields.includes('date'), 'Identifica que falta la fecha')
+  assert(!valResult.missingFields.includes('amount'), 'Monto ya no es un campo bloqueante/faltante')
   assert(valResult.confidence === 60, `Cálculo de confianza proporcional: ${valResult.confidence}%`)
 
   console.log('\n-------------------------------------------------------------')

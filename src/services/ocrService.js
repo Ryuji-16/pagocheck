@@ -96,13 +96,24 @@ export function normalizeOcr(text) {
 }
 
 const RECEIVER_LABEL =
-  /beneficiar|receptor|destino|comercio|tienda|recib|celular(?:\s*de)?\s*destino|telf(?:\s*de)?\s*destino|telf\s*beneficiario|n[uú]mero(?:\s*de)?\s*destino/i
+  /beneficiar|receptor|destino|comercio|tienda|recib(?:o|id)?|celular(?:\s*de)?\s*destino|telf(?:\s*de)?\s*destino|telf\s*beneficiario|n[uú]mero(?:\s*de)?\s*destino|banco\s*(?:de\s*)?destino/i
 const PAYER_LABEL =
-  /pagador|emisor|remitente|ordenante|celular(?:\s*de)?\s*origen|n[uú]mero(?:\s*celular)?(?:\s*de)?\s*origen|cuenta\s*\/\s*(?:t[eé]l[eé]f|rel[eé]f|cel|m[oó]vil|telf)|tel[eé]fono(?:\s*de)?\s*origen|n[uú]mero(?:\s*de)?\s*origen|banco\s*(?:de\s*)?origen/i
+  /pagador|emisor|remitente|ordenante|celular(?:\s*de)?\s*origen|n[uú]mero(?:\s*celular)?(?:\s*de)?\s*origen|cuenta\s*[/f:.-]?\s*(?:t[eé]l[eé]f|rel[eé]f|cel|m[oó]vil|telf)|tel[eé]fono(?:\s*de)?\s*origen|n[uú]mero(?:\s*de)?\s*origen|banco\s*(?:de\s*)?origen/i
+
+function findLastMatchIndex(regex, str) {
+  const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`
+  const re = new RegExp(regex.source, flags)
+  let last = -1
+  let match
+  while ((match = re.exec(str))) {
+    last = match.index
+  }
+  return last
+}
 
 export function extractPayerPhone(text) {
   const compact = text.replace(/\s+/g, ' ')
-  // Reconoce teléfonos con posibles caracteres OCR confusos (ej: O414, 269-83-O1)
+  // Reconoce teléfonos con posibles caracteres OCR confusos (ej: O414, 269-83-O1) o sin separadores
   const phonePattern =
     /(?:(?:\+?58\s*)?\(?0?[124][0-9OlSsBb]{2}\)?[\s.-]?[0-9OlSsBb]{3}[\s.-]?[0-9OlSsBb]{2}[\s.-]?[0-9OlSsBb]{2}|(?:\+?58\s*)?0?[124][0-9OlSsBb]{9})/gi
   const payerPhones = []
@@ -113,13 +124,18 @@ export function extractPayerPhone(text) {
     const formatted = formatPhone(match[0])
     if (!formatted) continue
 
-    const start = Math.max(0, match.index - 120)
-    const context = compact.slice(start, match.index + match[0].length).toLowerCase()
+    const start = Math.max(0, match.index - 140)
+    const before = compact.slice(start, match.index).toLowerCase()
 
-    if (RECEIVER_LABEL.test(context)) continue
+    const lastPayer = findLastMatchIndex(PAYER_LABEL, before)
+    const lastReceiver = findLastMatchIndex(RECEIVER_LABEL, before)
 
-    if (PAYER_LABEL.test(context)) {
+    // Si la etiqueta de pagador/emisor está más próxima al número que la de receptor:
+    if (lastPayer !== -1 && (lastReceiver === -1 || lastPayer > lastReceiver)) {
       payerPhones.push(formatted)
+    } else if (lastReceiver !== -1 && (lastPayer === -1 || lastReceiver > lastPayer)) {
+      // Pertenece a la sección del comercio/receptor, no es pagador
+      continue
     } else {
       candidatePhones.push(formatted)
     }
@@ -318,7 +334,7 @@ export function extractDate(compact) {
 export function extractReference(compact) {
   // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, Ubii, etc.)
   const refLabelRegex =
-    /(?:n[uú]mero\s+de\s+referencia|nro\.?\s*(?:de\s*)?referencia|n[°º]\.?\s*(?:de\s*)?referencia|referencia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([^\n\r]{1,40})/gi
+    /(?:n[uú]mero\s+de\s+ref[eao]r[eao]ncia|nro\.?\s*(?:de\s*)?ref[eao]r[eao]ncia|n[°º]\.?\s*(?:de\s*)?ref[eao]r[eao]ncia|ref[eao]r[eao]ncia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([^\n\r]{1,40})/gi
 
   let match
   while ((match = refLabelRegex.exec(compact))) {
@@ -436,31 +452,24 @@ export function validatePaymentData(data = {}) {
     score += 25
   }
 
-  // 3. Monto (20 puntos)
-  if (!data.amount || String(data.amount).trim() === '') {
-    missingFields.push('amount')
-  } else {
-    score += 20
-  }
-
-  // 4. Teléfono (10 puntos)
+  // 3. Teléfono (20 puntos)
   if (!data.phone || String(data.phone).trim() === '') {
     missingFields.push('phone')
   } else if (!/^04\d{2}-\d{7}$/.test(String(data.phone).trim()) && !/^04\d{9}$/.test(String(data.phone).trim())) {
     warnings.push('El teléfono no cumple el formato móvil venezolano estándar (04XX-XXXXXXX).')
-    score += 5
-  } else {
     score += 10
+  } else {
+    score += 20
   }
 
-  // 5. Fecha (10 puntos)
+  // 4. Fecha (20 puntos)
   if (!data.date || String(data.date).trim() === '') {
     missingFields.push('date')
   } else if (!/^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/.test(String(data.date).trim())) {
     warnings.push('La fecha no cumple el formato estándar DD/MM/AAAA.')
-    score += 5
-  } else {
     score += 10
+  } else {
+    score += 20
   }
 
   const isValid = Boolean(refDigits && refDigits.length >= 4 && data.bank)

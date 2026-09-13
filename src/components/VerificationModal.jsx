@@ -1,3 +1,4 @@
+import { formatBs } from '../utils/formatters.js'
 import './css/VerificationModal.css'
 
 function VerificationModal({ result, onClose }) {
@@ -96,7 +97,11 @@ function VerificationModal({ result, onClose }) {
               {result.amount && (
                 <div className="result-detail">
                   <span>Monto recibido</span>
-                  <strong>{result.amount}</strong>
+                  <strong>
+                    {typeof result.amount === 'number' || !String(result.amount).includes('Bs')
+                      ? formatBs(result.amount)
+                      : result.amount}
+                  </strong>
                 </div>
               )}
 
