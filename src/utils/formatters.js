@@ -220,3 +220,23 @@ export function isValidVePhone(value) {
   const prefix = digits.slice(0, 4)
   return VE_MOBILE_PREFIXES.includes(prefix)
 }
+
+/**
+ * Formatea el nombre de la sucursal para presentación limpia:
+ * remueve numeración previa ('Tienda 1') y paréntesis, extrayendo el nombre limpio (ej. 'Bella Vista').
+ * @param {string} branch
+ * @returns {string}
+ */
+export function formatBranchDisplayName(branch) {
+  if (!branch || typeof branch !== 'string') return ''
+  const trimmed = branch.trim()
+  const parenMatch = trimmed.match(/\(([^)]+)\)/)
+  if (parenMatch && parenMatch[1]) {
+    return parenMatch[1].trim()
+  }
+  const prefixMatch = trimmed.match(/^Tienda\s*\d+\s*[-:–—]?\s*(.+)$/i)
+  if (prefixMatch && prefixMatch[1]) {
+    return prefixMatch[1].trim()
+  }
+  return trimmed.replace(/^Tienda\s*\d+\s*/i, '').trim()
+}

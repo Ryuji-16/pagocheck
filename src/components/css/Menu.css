@@ -70,46 +70,6 @@
   line-height: 1.45;
 }
 
-.menu-toolbar {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 24px;
-}
-
-.menu-settings,
-.menu-logout {
-  min-height: 40px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-theme);
-}
-
-.menu-settings {
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  color: var(--text-secondary);
-}
-
-.menu-settings:hover {
-  background: var(--card-hover);
-  color: var(--text-primary);
-}
-
-.menu-logout {
-  border: 1px solid var(--status-error-border);
-  background: var(--status-error-bg);
-  color: var(--status-error-text);
-}
-
-.menu-logout:hover {
-  filter: brightness(1.1);
-}
-
 .menu-grid .menu-card:last-child {
   grid-column: 1 / -1;
 }

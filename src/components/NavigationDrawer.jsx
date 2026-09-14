@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { formatBranchDisplayName } from '../utils/formatters'
 import './css/NavigationDrawer.css'
 
 function NavigationDrawer({
@@ -43,7 +44,7 @@ function NavigationDrawer({
         : 'Cajero'
 
   const resolvedName = session?.label || session?.username || 'Usuario'
-  const branchName = session?.branch || 'General'
+  const cleanBranch = formatBranchDisplayName(session?.branch) || 'General'
 
   function handleItemClick(screen) {
     onNavigate(screen)
@@ -95,8 +96,8 @@ function NavigationDrawer({
               </span>
               <div className="drawer-user-meta">
                 <span className="drawer-role-pill">{roleLabel}</span>
-                <span className="drawer-branch-label" title={branchName}>
-                  📍 {branchName}
+                <span className="drawer-branch-label" title={cleanBranch}>
+                  {cleanBranch}
                 </span>
               </div>
             </div>

@@ -1,14 +1,16 @@
+import { formatBranchDisplayName } from '../utils/formatters'
 import './css/Menu.css'
 
-function Menu({ username, label, branch, role, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
+function Menu({ username, label, branch, role, onOpenVerify, onOpenVuelto, onOpenMovements }) {
   const isAdmin = role === 'admin' || role === 'admin_sucursal' || role === 'admin_tienda'
+  const branchDisplayName = formatBranchDisplayName(branch)
 
   return (
     <section className="menu-screen">
       <h1>Menú</h1>
       <p>
         Hola, {label || username}
-        {branch ? <span> · 📍 {branch}</span> : ''}. ¿Qué quieres hacer?
+        {branchDisplayName ? <span> · {branchDisplayName}</span> : ''}. ¿Qué quieres hacer?
       </p>
 
       <div className="menu-grid">
@@ -32,15 +34,6 @@ function Menu({ username, label, branch, role, onOpenVerify, onOpenVuelto, onOpe
               ? 'Consulta el historial consolidado de operaciones.'
               : 'Revisa validaciones y vueltos de esta caja.'}
           </span>
-        </button>
-      </div>
-
-      <div className="menu-toolbar">
-        <button type="button" className="menu-settings" onClick={onOpenSettings}>
-          {isAdmin ? '⚙️ Panel de Administración y Auditoría' : '⚙️ Configuración y Clave'}
-        </button>
-        <button type="button" className="menu-logout" onClick={onLogout}>
-          Cerrar sesión
         </button>
       </div>
     </section>

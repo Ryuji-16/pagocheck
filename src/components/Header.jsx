@@ -1,10 +1,12 @@
+import { formatBranchDisplayName } from '../utils/formatters'
 import { isRemoteDbEnabled } from '../services/supabaseClient'
 import './css/Header.css'
 
-function Header({ loggedIn, session, onGoMenu, onOpenDrawer, theme, onToggleTheme }) {
+function Header({ loggedIn, session, onGoMenu, onOpenDrawer }) {
   const isCloud = isRemoteDbEnabled()
   const statusLabel = isCloud ? 'En línea' : 'Modo local'
   const userName = session?.label || session?.username || 'Usuario'
+  const branchName = formatBranchDisplayName(session?.branch)
 
   return (
     <header className="app-header">
@@ -35,23 +37,12 @@ function Header({ loggedIn, session, onGoMenu, onOpenDrawer, theme, onToggleThem
         </div>
 
         <div className="header-actions">
-          <button
-            type="button"
-            className="header-theme-toggle"
-            onClick={onToggleTheme}
-            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            aria-label="Cambiar tema"
-          >
-            <span className="header-theme-icon">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            <span className="header-theme-text">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
-          </button>
-
           <div
             className="header-status"
-            title={isCloud ? `Conectado a la nube (Supabase)${session?.branch ? ` · ${session.branch}` : ''}` : 'Modo local (sin conexión)'}
+            title={isCloud ? `Conectado a la nube (Supabase)${branchName ? ` · ${branchName}` : ''}` : 'Modo local (sin conexión)'}
           >
             <span className="status-dot"></span>
-            <span>{statusLabel}{session?.branch ? ` · ${session.branch}` : ''}</span>
+            <span>{statusLabel}{branchName ? ` · ${branchName}` : ''}</span>
           </div>
 
           {loggedIn && onOpenDrawer && (

@@ -49,8 +49,6 @@ function App() {
           session={session}
           onGoMenu={goMenu}
           onOpenDrawer={() => setIsDrawerOpen(true)}
-          theme={theme}
-          onToggleTheme={toggleTheme}
         />
       )}
 
@@ -85,8 +83,6 @@ function App() {
             onOpenVerify={() => setScreen('verify')}
             onOpenVuelto={() => setScreen('vuelto')}
             onOpenMovements={() => setScreen('movements')}
-            onOpenSettings={() => setScreen('settings')}
-            onLogout={handleLogout}
           />
         )}
 
