@@ -15,7 +15,9 @@
     "test:provider": "node scripts/test_verification_provider.js",
     "test:storage": "node scripts/test_storage.js",
     "test:ocr": "node scripts/test_ocr.js",
-    "test:audit": "node scripts/test_audit.js"
+    "test:audit": "node scripts/test_audit.js",
+    "test:e2e": "node scripts/test_full_flow.js",
+    "test:all": "npm run test:provider && npm run test:storage && npm run test:ocr && npm run test:audit && npm run test:e2e"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",

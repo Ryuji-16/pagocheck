@@ -240,6 +240,22 @@ export async function saveMovement(entry) {
   }
   const next = [localItem, ...readAllLocal()].slice(0, 200)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+
+  if (item.type === 'vuelto') {
+    recordAuditEvent({
+      action: AUDIT_ACTIONS.VUELTO_ISSUED,
+      entityType: 'vuelto',
+      entityId: item.reference || item.phone,
+      status: 'success',
+      details: {
+        amount: item.amount,
+        phone: item.phone,
+        bank: item.bank,
+        cedula: item.cedula
+      }
+    })
+  }
+
   return localItem
 }
 
