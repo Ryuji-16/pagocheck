@@ -6,6 +6,7 @@ import Vuelto from './components/Vuelto'
 import Settings from './components/Settings'
 import UploadZone from './components/UploadZone'
 import Movements from './components/Movements'
+import NavigationDrawer from './components/NavigationDrawer'
 import { getSession, logout } from './services/authService'
 import './App.css'
 import './components/css/Modals.css'
@@ -14,6 +15,7 @@ function App() {
   const [session, setSession] = useState(() => getSession())
   const [screen, setScreen] = useState(() => (getSession() ? 'menu' : 'login'))
   const [theme, setTheme] = useState(() => localStorage.getItem('pagocheck-theme') || 'dark')
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -46,9 +48,22 @@ function App() {
           loggedIn={Boolean(session)}
           session={session}
           onGoMenu={goMenu}
-          onLogout={handleLogout}
+          onOpenDrawer={() => setIsDrawerOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
+        />
+      )}
+
+      {session && (
+        <NavigationDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          session={session}
+          currentScreen={screen}
+          onNavigate={(nextScreen) => setScreen(nextScreen)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
         />
       )}
 

@@ -28,9 +28,35 @@
   justify-content: space-between;
 }
 
-/* =========================================================
-   MARCA
-   ========================================================= */
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-menu-button {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--header-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.header-menu-button:hover {
+  background: var(--card-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.header-menu-button .material-symbols-outlined {
+  font-size: 22px;
+}
 
 .brand {
   display: flex;
@@ -129,6 +155,47 @@
   filter: brightness(1.1);
 }
 
+.header-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 12px 4px 5px;
+  border: 1px solid var(--badge-border);
+  border-radius: var(--radius-pill);
+  background: var(--badge-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.header-user-btn:hover {
+  border-color: var(--primary);
+  background: var(--card-hover);
+}
+
+.header-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* =========================================================
    RESPONSIVE
    ========================================================= */
@@ -153,6 +220,10 @@
   }
 
   .header-status {
+    display: none;
+  }
+
+  .header-user-name {
     display: none;
   }
 }

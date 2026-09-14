@@ -1,23 +1,38 @@
 import { isRemoteDbEnabled } from '../services/supabaseClient'
 import './css/Header.css'
 
-function Header({ loggedIn, session, onGoMenu, onLogout, theme, onToggleTheme }) {
+function Header({ loggedIn, session, onGoMenu, onOpenDrawer, theme, onToggleTheme }) {
   const isCloud = isRemoteDbEnabled()
   const statusLabel = isCloud ? 'En línea' : 'Modo local'
+  const userName = session?.label || session?.username || 'Usuario'
 
   return (
     <header className="app-header">
       <div className="header-content">
-        <button
-          type="button"
-          className="brand"
-          onClick={loggedIn ? onGoMenu : undefined}
-        >
-          <div className="brand-icon">
-            ✓
-          </div>
-          PagoCheck
-        </button>
+        <div className="header-left-group">
+          {loggedIn && onOpenDrawer && (
+            <button
+              type="button"
+              className="header-menu-button"
+              onClick={onOpenDrawer}
+              title="Abrir menú de opciones"
+              aria-label="Abrir menú de opciones"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="brand"
+            onClick={loggedIn ? onGoMenu : undefined}
+          >
+            <div className="brand-icon">
+              ✓
+            </div>
+            PagoCheck
+          </button>
+        </div>
 
         <div className="header-actions">
           <button
@@ -39,13 +54,20 @@ function Header({ loggedIn, session, onGoMenu, onLogout, theme, onToggleTheme })
             <span>{statusLabel}{session?.branch ? ` · ${session.branch}` : ''}</span>
           </div>
 
-          {loggedIn && (
+          {loggedIn && onOpenDrawer && (
             <button
               type="button"
-              className="header-logout"
-              onClick={onLogout}
+              className="header-user-btn"
+              onClick={onOpenDrawer}
+              title="Ver perfil y menú de opciones"
+              aria-label="Abrir menú de usuario"
             >
-              Salir
+              <span className="header-user-avatar">
+                {userName.charAt(0).toUpperCase()}
+              </span>
+              <span className="header-user-name">
+                {userName}
+              </span>
             </button>
           )}
         </div>
