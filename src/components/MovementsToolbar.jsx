@@ -19,7 +19,9 @@ function MovementsToolbar({
   statusFilter,
   onStatusFilterChange,
   onResetFilters,
-  hasActiveFilters
+  hasActiveFilters,
+  onRefresh,
+  isRefreshing
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [localSearch, setLocalSearch] = useState(searchQuery)
@@ -142,6 +144,18 @@ function MovementsToolbar({
               <option value="all">📅 Todos los días</option>
             </select>
           </div>
+
+          {onRefresh && (
+            <button
+              type="button"
+              className="movements-refresh-btn"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              title="Actualizar movimientos recientes"
+            >
+              <span className={`refresh-icon ${isRefreshing ? 'spinning' : ''}`}>↻</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -203,10 +203,16 @@ function VerificationModal({ result, onClose }) {
           {buttonText}
         </button>
 
-        <p className="result-demo-note">
-          Resultado de prueba. Aún no se consulta un banco real.
-        </p>
-
+        <div className="result-footer-meta">
+          <span className="result-channel-badge">
+            🔒 Pasarela Bancaria Segura
+          </span>
+          {typeof result.duration_ms === 'number' && (
+            <span className="result-latency-badge" title="Tiempo de respuesta de la pasarela">
+              ⚡ {result.duration_ms} ms
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

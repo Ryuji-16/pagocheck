@@ -1,6 +1,8 @@
 import './css/Menu.css'
 
-function Menu({ username, label, branch, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
+function Menu({ username, label, branch, role, onOpenVerify, onOpenVuelto, onOpenMovements, onOpenSettings, onLogout }) {
+  const isAdmin = role === 'admin' || role === 'admin_sucursal' || role === 'admin_tienda'
+
   return (
     <section className="menu-screen">
       <h1>Menú</h1>
@@ -19,19 +21,23 @@ function Menu({ username, label, branch, onOpenVerify, onOpenVuelto, onOpenMovem
         <button type="button" className="menu-card" onClick={onOpenVuelto}>
           <span className="menu-icon">⇄</span>
           <strong>Dar vuelto</strong>
-          <span>Envía vuelto por pago móvil. Simulación por ahora.</span>
+          <span>Emite vueltos de forma rápida y genera comprobante.</span>
         </button>
 
         <button type="button" className="menu-card" onClick={onOpenMovements}>
           <span className="menu-icon">☰</span>
           <strong>Movimientos</strong>
-          <span>Revisa validaciones y vueltos de esta caja.</span>
+          <span>
+            {isAdmin
+              ? 'Consulta el historial consolidado de operaciones.'
+              : 'Revisa validaciones y vueltos de esta caja.'}
+          </span>
         </button>
       </div>
 
       <div className="menu-toolbar">
         <button type="button" className="menu-settings" onClick={onOpenSettings}>
-          ⚙ Cambiar clave
+          {isAdmin ? '⚙️ Panel de Administración y Auditoría' : '⚙️ Configuración y Clave'}
         </button>
         <button type="button" className="menu-logout" onClick={onLogout}>
           Cerrar sesión

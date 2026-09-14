@@ -127,6 +127,7 @@ export async function verifyPayment(data = {}) {
     date: result.date || data.date,
     bank: result.bank || data.bank,
     phone: result.phone || data.phone,
-    provider: result.provider || provider.id
+    provider: result.provider || provider.id,
+    duration_ms: Math.max(0, Math.round(durationMs))
   }
 }

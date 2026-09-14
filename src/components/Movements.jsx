@@ -29,8 +29,21 @@ function Movements({ session, onBack }) {
   const [exporting, setExporting] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [selectedReceipt, setSelectedReceipt] = useState(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const isAdmin = session?.role === 'admin'
+
+  async function handleRefresh() {
+    setIsRefreshing(true)
+    try {
+      const rows = await listMovements(session)
+      setItems(rows || [])
+    } catch (err) {
+      console.error('Error al actualizar movimientos:', err)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -369,6 +382,8 @@ function Movements({ session, onBack }) {
         }}
         onResetFilters={handleResetFilters}
         hasActiveFilters={hasActiveFilters}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
 
       {/* 6. Tabla de datos (con ordenamiento, referencia y visor de recibo) */}

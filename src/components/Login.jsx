@@ -200,18 +200,73 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
             </button>
           </form>
 
-            {/* Toast dinámico */}
-            {toastMessage && (
-              <div className="login-feedback-toast" role="status">
-                <span className="material-symbols-outlined icon-fill">check_circle</span>
-                <span>{toastMessage}</span>
-              </div>
-            )}
+          {/* Selector de acceso rápido a terminales */}
+          <div className="login-quick-access">
+            <span className="login-quick-label">Acceso rápido a terminales:</span>
+            <div className="login-quick-chips">
+              <button
+                type="button"
+                className="login-quick-chip"
+                onClick={() => {
+                  setUsername('caja1')
+                  setPassword('caja1')
+                  setError('')
+                }}
+                title="Acceso para Caja 1 en Bella Vista"
+              >
+                🏪 Caja 1 (Bella Vista)
+              </button>
+              <button
+                type="button"
+                className="login-quick-chip"
+                onClick={() => {
+                  setUsername('admin_t1')
+                  setPassword('admin1')
+                  setError('')
+                }}
+                title="Acceso Supervisor de Bella Vista"
+              >
+                👔 Supervisor (Bella Vista)
+              </button>
+              <button
+                type="button"
+                className="login-quick-chip"
+                onClick={() => {
+                  setUsername('t2_caja1')
+                  setPassword('caja1')
+                  setError('')
+                }}
+                title="Acceso para Caja 1 en Altamira"
+              >
+                🏪 Caja 1 (Altamira)
+              </button>
+              <button
+                type="button"
+                className="login-quick-chip"
+                onClick={() => {
+                  setUsername('admin')
+                  setPassword('admin123')
+                  setError('')
+                }}
+                title="Acceso Dueño General consolidado"
+              >
+                🛡️ Dueño / General
+              </button>
+            </div>
+          </div>
+
+          {/* Toast dinámico */}
+          {toastMessage && (
+            <div className="login-feedback-toast" role="status">
+              <span className="material-symbols-outlined icon-fill">check_circle</span>
+              <span>{toastMessage}</span>
+            </div>
+          )}
         </div>
 
-        {/* Pie de página con copyright */}
+        {/* Pie de página con copyright dinámico */}
         <footer className="login-footer">
-          <span>PagoCheck Cloud POS © 2025</span>
+          <span>PagoCheck Cloud POS © {new Date().getFullYear()}</span>
           <span>•</span>
           <span>Conexión Encriptada TLS 1.3</span>
         </footer>

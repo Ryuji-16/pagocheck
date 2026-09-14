@@ -44,6 +44,7 @@ function App() {
       {session && (
         <Header
           loggedIn={Boolean(session)}
+          session={session}
           onGoMenu={goMenu}
           onLogout={handleLogout}
           theme={theme}
@@ -65,6 +66,7 @@ function App() {
             username={session.username}
             label={session.label}
             branch={session.branch}
+            role={session.role}
             onOpenVerify={() => setScreen('verify')}
             onOpenVuelto={() => setScreen('vuelto')}
             onOpenMovements={() => setScreen('movements')}
@@ -83,9 +85,10 @@ function App() {
               ← Menú
             </button>
 
-            <p className="demo-banner" role="status">
-              Prototipo de prueba. Los resultados aún no consultan un banco real.
-            </p>
+            <div className="verify-security-badge" role="status">
+              <span>🛡️</span>
+              <span>Validación Oficial Pago Móvil · Banesco</span>
+            </div>
 
             <h1>Verifica tu pago</h1>
 

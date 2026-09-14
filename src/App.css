@@ -13,15 +13,18 @@ main {
   text-align: center;
 }
 
-.demo-banner {
+.verify-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   width: fit-content;
   max-width: 100%;
   margin: 0 auto 22px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: var(--radius-pill);
-  background: var(--status-warning-bg);
-  border: 1px solid var(--status-warning-border);
-  color: var(--status-warning-text);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.4;
@@ -50,7 +53,7 @@ main > p {
   font-size: 15px;
 }
 
-body.form-open .demo-banner,
+body.form-open .verify-security-badge,
 body.form-open main > .modal-back-button,
 body.form-open main > h1,
 body.form-open main > p {

@@ -1,6 +1,10 @@
+import { isRemoteDbEnabled } from '../services/supabaseClient'
 import './css/Header.css'
 
-function Header({ loggedIn, onGoMenu, onLogout, theme, onToggleTheme }) {
+function Header({ loggedIn, session, onGoMenu, onLogout, theme, onToggleTheme }) {
+  const isCloud = isRemoteDbEnabled()
+  const statusLabel = isCloud ? 'En línea' : 'Modo local'
+
   return (
     <header className="app-header">
       <div className="header-content">
@@ -27,9 +31,12 @@ function Header({ loggedIn, onGoMenu, onLogout, theme, onToggleTheme }) {
             <span className="header-theme-text">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
           </button>
 
-          <div className="header-status">
+          <div
+            className="header-status"
+            title={isCloud ? `Conectado a la nube (Supabase)${session?.branch ? ` · ${session.branch}` : ''}` : 'Modo local (sin conexión)'}
+          >
             <span className="status-dot"></span>
-            Modo demo
+            <span>{statusLabel}{session?.branch ? ` · ${session.branch}` : ''}</span>
           </div>
 
           {loggedIn && (
