@@ -22,13 +22,17 @@ Esta guía detalla los pasos para poner en marcha la plataforma **PagoCheck** en
 3. Abre el archivo [`supabase/deploy_all.sql`](file:///home/anonymity/Proyects/pagocheck/supabase/deploy_all.sql) de este repositorio, copia su contenido completo, pégalo en el editor y haz clic en **Run**.
 
 ### Opción B: Despliegue Modular por Fases
-Si prefieres ejecutar las migraciones paso a paso, ejecútalas en este orden:
-1. `supabase/migrations/01_security_hardening.sql`: RLS base, blindaje contra accesos anónimos y tabla de perfiles.
-2. `supabase/migrations/02_seed_auth_users.sql`: Provisión de cuentas en `auth.users` y vinculación a perfiles.
-3. `supabase/migrations/03_rbac_branches.sql`: Funciones de contexto de sucursal y aislamiento de movimientos por tienda.
-4. `supabase/migrations/04_db_integrity_and_duplicates.sql`: Índice único parcial para prevención de pagos duplicados.
-5. `supabase/migrations/05_storage_receipts.sql`: Creación del bucket privado `receipts` y políticas de acceso a imágenes.
-6. `supabase/migrations/06_audit_logs.sql`: Creación de la bitácora inmutable de auditoría y políticas de lectura.
+Si prefieres ejecutar las migraciones paso a paso o mediante el Supabase CLI (`supabase migration up`), ejecútalas en este orden:
+1. `supabase/migrations/001_security_hardening.sql`: RLS base, blindaje contra accesos anónimos y tabla de perfiles.
+2. `supabase/migrations/002_seed_auth_users.sql`: Provisión de cuentas en `auth.users` y vinculación a perfiles.
+3. `supabase/migrations/003_rbac_branches.sql`: Funciones de contexto de sucursal y aislamiento de movimientos por tienda.
+4. `supabase/migrations/004_db_integrity_and_duplicates.sql`: Índice único parcial para prevención de pagos duplicados.
+5. `supabase/migrations/005_storage_receipts.sql`: Creación del bucket privado `receipts` y políticas de acceso a imágenes.
+6. `supabase/migrations/006_audit_logs.sql`: Creación de la bitácora inmutable de auditoría y políticas de lectura.
+7. `supabase/migrations/007_cleanup_legacy_auth.sql`: Erradicación definitiva de entidades y funciones legacy (`app_users`, `verify_login`).
+
+> [!NOTE]
+> Para validar las políticas de seguridad en la base de datos, puedes ejecutar las suites de prueba en `supabase/tests/` (`movements_rls.test.sql`, `profiles_rls.test.sql`, `audit_rls.test.sql`).
 
 ---
 

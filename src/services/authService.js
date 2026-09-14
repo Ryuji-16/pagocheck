@@ -2,42 +2,55 @@ import { getTenantConfig } from '../config/tenantConfig.js'
 import { isRemoteDbEnabled, supabase } from './supabaseClient.js'
 
 const SESSION_KEY = 'pagocheck-session'
-const USERS_KEY = 'pagocheck-users'
 
 const tenantConfig = getTenantConfig()
 const botConfig = tenantConfig.bot || {}
 
-// Metadatos de cuentas para la interfaz y modo local
-const DEFAULT_USERS = {
+// Metadatos de cuentas operativas del sistema (exclusivamente para UI y sandbox de desarrollo)
+// Las contraseñas NO existen en el frontend bajo ningún concepto.
+const ACCOUNT_METADATA = {
   // Tienda 1 (Bella Vista)
-  admin_t1: { role: 'admin', label: 'Admin Bella Vista', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin1' },
-  caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
-  caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
-  caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar', localFallbackPassword: 'caja3' },
+  admin_t1: { role: 'admin', label: 'Admin Bella Vista', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account' },
+  caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Mostrador', icon: 'point_of_sale' },
+  caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Salón', icon: 'table_restaurant' },
+  caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 1 (Bella Vista)', subtitle: 'Terminal Barra / Terraza', icon: 'local_bar' },
   // Tienda 2 (Altamira)
-  admin_t2: { role: 'admin', label: 'Admin Altamira', branch: 'Tienda 2 (Altamira)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin2' },
-  t2_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
-  t2_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
-  t2_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
+  admin_t2: { role: 'admin', label: 'Admin Altamira', branch: 'Tienda 2 (Altamira)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account' },
+  t2_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t2_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t2_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 2 (Altamira)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
   // Tienda 3 (La Trinidad)
-  admin_t3: { role: 'admin', label: 'Admin La Trinidad', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account', localFallbackPassword: 'admin3' },
-  t3_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale', localFallbackPassword: 'caja1' },
-  t3_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant', localFallbackPassword: 'caja2' },
-  t3_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar', localFallbackPassword: 'caja3' },
+  admin_t3: { role: 'admin', label: 'Admin La Trinidad', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Supervisor Sucursal', icon: 'supervisor_account' },
+  t3_caja1: { role: 'caja', label: 'Caja 1', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Principal', icon: 'point_of_sale' },
+  t3_caja2: { role: 'caja', label: 'Caja 2', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Mostrador', icon: 'table_restaurant' },
+  t3_caja3: { role: 'caja', label: 'Caja 3', branch: 'Tienda 3 (La Trinidad)', subtitle: 'Terminal Rápida', icon: 'local_bar' },
   // Camión Móvil
-  admin_camion: { role: 'admin', label: 'Admin Camión', branch: 'Camión Móvil', subtitle: 'Supervisor Ruta Móvil', icon: 'supervisor_account', localFallbackPassword: 'admincamion' },
-  camion_caja1: { role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping', localFallbackPassword: 'camion' },
+  admin_camion: { role: 'admin', label: 'Admin Camión', branch: 'Camión Móvil', subtitle: 'Supervisor Ruta Móvil', icon: 'supervisor_account' },
+  camion_caja1: { role: 'caja', label: 'Caja Móvil', branch: 'Camión Móvil', subtitle: 'Terminal Ruta', icon: 'local_shipping' },
   // Servicios / Bot (WhatsApp / Delivery)
   [botConfig.serviceUsername || 'bot_service']: {
     role: 'bot',
     label: botConfig.serviceLabel || 'Asistente WhatsApp',
     branch: botConfig.branch || 'WhatsApp / Delivery',
     subtitle: 'Servicios / Bot',
-    icon: 'smart_toy',
-    localFallbackPassword: 'bot'
+    icon: 'smart_toy'
   },
   // Dueño de la Empresa (Administrador General de todas las sucursales)
-  admin: { role: 'admin', label: 'Dueño / Admin General', branch: '', subtitle: 'Dueño de la Empresa / Consolidado Total', icon: 'shield_person', localFallbackPassword: 'admin123' }
+  admin: { role: 'admin', label: 'Dueño / Admin General', branch: '', subtitle: 'Dueño de la Empresa / Consolidado Total', icon: 'shield_person' }
+}
+
+/**
+ * Determina si el entorno actual es de desarrollo o pruebas locales.
+ */
+function isDevEnvironment() {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return Boolean(import.meta.env.DEV)
+  }
+  const proc = typeof globalThis !== 'undefined' ? globalThis.process : undefined
+  if (proc && proc.env) {
+    return proc.env.NODE_ENV !== 'production'
+  }
+  return false
 }
 
 /**
@@ -52,70 +65,8 @@ export function toAuthEmail(username) {
   return `${clean}@auth.pagocheck.com`
 }
 
-function toUserRecord(value, fallbackRole = 'caja', fallbackBranch = '') {
-  if (value && typeof value === 'object' && value.password) {
-    return {
-      password: String(value.password),
-      role: value.role || fallbackRole,
-      label: value.label || '',
-      branch: value.branch || fallbackBranch
-    }
-  }
-
-  return {
-    password: String(value || ''),
-    role: fallbackRole,
-    label: '',
-    branch: fallbackBranch
-  }
-}
-
-function readLocalUsers() {
-  let stored
-
-  try {
-    stored = JSON.parse(localStorage.getItem(USERS_KEY) || '{}') || {}
-  } catch {
-    stored = {}
-  }
-
-  // Eliminar usuario demo si existía previamente
-  if (stored.demo) {
-    delete stored.demo
-    localStorage.setItem(USERS_KEY, JSON.stringify(stored))
-  }
-
-  const users = {}
-
-  for (const [username, meta] of Object.entries(DEFAULT_USERS)) {
-    const saved = stored[username]
-    users[username] = {
-      ...meta,
-      password: saved ? toUserRecord(saved, meta.role, meta.branch).password : meta.localFallbackPassword,
-      branch: meta.branch || ''
-    }
-  }
-
-  return users
-}
-
-function writeLocalUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
-
 export function isRemoteAuthEnabled() {
   return Boolean(isRemoteDbEnabled() && supabase)
-}
-
-export function getDemoAccounts() {
-  return Object.entries(DEFAULT_USERS).map(([username, meta]) => ({
-    username,
-    role: meta.role,
-    label: meta.label,
-    branch: meta.branch || '',
-    subtitle: meta.subtitle || '',
-    icon: meta.icon || 'account_circle'
-  }))
 }
 
 export function getSession() {
@@ -138,7 +89,8 @@ function writeSession(session) {
 }
 
 /**
- * Autentica al usuario usando Supabase Auth (JWT) o el fallback local en desarrollo offline.
+ * Autentica al usuario usando Supabase Auth (JWT) o sandbox controlado en desarrollo.
+ * Las contraseñas se validan exclusivamente en el servidor (Supabase Auth).
  *
  * @param {string} username
  * @param {string} password
@@ -156,6 +108,7 @@ export async function login(username, password) {
     return { ok: false, message: 'El usuario demo ha sido eliminado del sistema.' }
   }
 
+  // 1. Flujo de Autenticación en Producción / Remoto (Supabase Auth obligatorio)
   if (isRemoteAuthEnabled()) {
     try {
       const email = toAuthEmail(name)
@@ -202,22 +155,30 @@ export async function login(username, password) {
     }
   }
 
-  // Fallback offline / local
-  const users = readLocalUsers()
-  const user = users[name]
+  // 2. Sandbox exclusivamente en entorno de desarrollo local sin backend configurado
+  if (isDevEnvironment()) {
+    const meta = ACCOUNT_METADATA[name]
+    if (!meta) {
+      return { ok: false, message: 'Usuario no encontrado en entorno de desarrollo.' }
+    }
 
-  if (!user || user.password !== pass) {
-    return { ok: false, message: 'Usuario o clave incorrectos.' }
+    const session = {
+      id: `dev-sandbox-${name}`,
+      username: name,
+      role: meta.role,
+      label: meta.label || name,
+      branch: meta.branch || ''
+    }
+
+    writeSession(session)
+    return { ok: true, session }
   }
 
-  const session = {
-    username: name,
-    role: user.role,
-    label: user.label || name,
-    branch: user.branch || ''
+  // En producción, la autenticación remota con Supabase es estrictamente obligatoria
+  return {
+    ok: false,
+    message: 'El servicio de autenticación en la nube es obligatorio en producción.'
   }
-  writeSession(session)
-  return { ok: true, session }
 }
 
 export async function logout() {
@@ -232,7 +193,7 @@ export async function logout() {
 }
 
 /**
- * Actualiza la contraseña del usuario en Supabase Auth o en almacenamiento local.
+ * Actualiza la contraseña del usuario en Supabase Auth.
  *
  * @param {string} username
  * @param {string} currentPassword
@@ -269,18 +230,9 @@ export async function changePassword(username, currentPassword, nextPassword) {
     return { ok: true }
   }
 
-  // Fallback local
-  const users = readLocalUsers()
-  const user = users[username]
-
-  if (!user || user.password !== currentPassword) {
-    return { ok: false, message: 'La clave actual no es correcta.' }
+  if (isDevEnvironment()) {
+    return { ok: true, message: 'Clave actualizada en sandbox de desarrollo.' }
   }
 
-  users[username] = {
-    ...user,
-    password: nextPassword
-  }
-  writeLocalUsers(users)
-  return { ok: true }
+  return { ok: false, message: 'Autenticación remota requerida para cambiar contraseñas.' }
 }

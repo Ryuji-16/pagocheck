@@ -318,20 +318,9 @@ export async function findMovementByReference(reference, bank = '') {
   const ref = String(reference || '').trim()
   if (!ref) return null
 
-  const refDigits = ref.replace(/\D/g, '')
-  const hasMinDigits = refDigits.length >= 6
-
   const matchesReference = (itemRef) => {
     if (!itemRef) return false
-    const itemTrimmed = itemRef.trim()
-    if (itemTrimmed === ref) return true
-    if (hasMinDigits) {
-      const itemDigits = itemRef.replace(/\D/g, '')
-      if (itemDigits.length >= 6 && itemDigits.slice(-6) === refDigits.slice(-6)) {
-        return true
-      }
-    }
-    return false
+    return itemRef.trim().toLowerCase() === ref.toLowerCase()
   }
 
   // 1. Revisar en almacenamiento local
@@ -341,7 +330,7 @@ export async function findMovementByReference(reference, bank = '') {
     if (!matchesReference(item.reference)) return false
     if (item.status === 'not-found' || item.status === 'error') return false
     if (bank && item.bank) {
-      return item.bank.trim() === bank.trim()
+      return item.bank.trim().toLowerCase() === bank.trim().toLowerCase()
     }
     return true
   })
@@ -353,27 +342,18 @@ export async function findMovementByReference(reference, bank = '') {
   // 2. Revisar en base de datos remota si está activa
   if (isRemoteDbEnabled()) {
     try {
-      const filter = hasMinDigits
-        ? `&reference=ilike.*${encodeURIComponent(refDigits.slice(-6))}`
-        : `&reference=eq.${encodeURIComponent(ref)}`
-      let { data, error } = await remoteRequest(
+      const bankFilter = bank ? `&bank=eq.${encodeURIComponent(bank.trim())}` : ''
+      const filter = `&reference=eq.${encodeURIComponent(ref)}${bankFilter}`
+      const { data, error } = await remoteRequest(
         `movements?select=id,created_at,username,label,branch,type,status,amount,reference,phone,bank,cedula,note${filter}&order=created_at.desc&limit=10`
       )
-
-      if (error && hasMinDigits) {
-        const fallback = await remoteRequest(
-          `movements?select=id,created_at,username,label,branch,type,status,amount,reference,phone,bank,cedula,note&reference=eq.${encodeURIComponent(ref)}&order=created_at.desc&limit=10`
-        )
-        data = fallback.data
-        error = fallback.error
-      }
 
       if (!error && Array.isArray(data)) {
         const found = data.find((row) => {
           if (row.status === 'not-found' || row.status === 'error') return false
           if (!matchesReference(row.reference)) return false
           if (bank && row.bank) {
-            return row.bank.trim() === bank.trim()
+            return row.bank.trim().toLowerCase() === bank.trim().toLowerCase()
           }
           return true
         })

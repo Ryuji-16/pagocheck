@@ -121,24 +121,46 @@ async function run() {
     return { pass: false, detail: 'Vulnerabilidad: Anon pudo insertar un movimiento en la BD' }
   })
 
-  // Test 3: Acceso directo a app_users
-  await runTest('Bloqueo de lectura directa en app_users', async () => {
+  // Test 3: Erradicación / Bloqueo de tabla app_users
+  await runTest('Erradicación de tabla legacy app_users', async () => {
     const res = await fetch(`${supabaseUrl}/rest/v1/app_users?select=*&limit=10`, { headers })
     const data = await res.json()
+    if (res.status === 404 || res.status === 400) {
+      return { pass: true, detail: `HTTP ${res.status} Tabla eliminada correctamente` }
+    }
     if (res.status === 401 || res.status === 403) {
-      return { pass: true, detail: `HTTP ${res.status} Acceso denegado correctamente` }
+      return { pass: true, detail: `HTTP ${res.status} Acceso denegado` }
     }
     if (Array.isArray(data) && data.length === 0) {
       return { pass: true, detail: 'Devuelve 0 usuarios (RLS activo)' }
     }
     if (Array.isArray(data) && data.length > 0) {
-      return { pass: false, detail: `Vulnerabilidad crítica: Anon pudo leer contraseñas/hashes` }
+      return { pass: false, detail: `Vulnerabilidad crítica: Anon pudo leer contraseñas de app_users` }
     }
     return { pass: true, detail: `Respuesta segura: ${res.status}` }
   })
 
-  // Test 4: Bloqueo de change_user_password anónimo
-  await runTest('Bloqueo de ejecución anónima en change_user_password', async () => {
+  // Test 4: Erradicación / Bloqueo de función verify_login
+  await runTest('Erradicación de RPC verify_login', async () => {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/verify_login`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        p_username: 'caja1',
+        p_password_hash: 'dummy'
+      })
+    })
+    if (res.status === 404 || res.status === 400) {
+      return { pass: true, detail: `HTTP ${res.status} Función eliminada correctamente` }
+    }
+    if (res.status === 401 || res.status === 403) {
+      return { pass: true, detail: `HTTP ${res.status} Ejecución rechazada` }
+    }
+    return { pass: false, detail: `Vulnerabilidad: verify_login sigue respondiendo HTTP ${res.status}` }
+  })
+
+  // Test 5: Erradicación / Bloqueo de change_user_password anónimo
+  await runTest('Erradicación / Bloqueo de RPC change_user_password', async () => {
     const res = await fetch(`${supabaseUrl}/rest/v1/rpc/change_user_password`, {
       method: 'POST',
       headers,
@@ -148,17 +170,52 @@ async function run() {
         p_new_hash: 'hacked'
       })
     })
-    if (res.status === 401 || res.status === 403 || res.status === 404 || !res.ok) {
+    if (res.status === 404 || res.status === 400) {
+      return { pass: true, detail: `HTTP ${res.status} Función eliminada correctamente` }
+    }
+    if (res.status === 401 || res.status === 403) {
       return { pass: true, detail: `HTTP ${res.status} Ejecución rechazada` }
     }
     return { pass: false, detail: 'Vulnerabilidad: Anon pudo invocar change_user_password' }
   })
 
+  // Test 6: Bloqueo de acceso anónimo a profiles
+  await runTest('Bloqueo de lectura anónima en profiles', async () => {
+    const res = await fetch(`${supabaseUrl}/rest/v1/profiles?select=*&limit=10`, { headers })
+    const data = await res.json()
+    if (res.status === 401 || res.status === 403) {
+      return { pass: true, detail: `HTTP ${res.status} Acceso denegado correctamente` }
+    }
+    if (Array.isArray(data) && data.length === 0) {
+      return { pass: true, detail: 'Devuelve 0 registros (RLS activo sin política anon)' }
+    }
+    if (Array.isArray(data) && data.length > 0) {
+      return { pass: false, detail: `Vulnerabilidad: Anon pudo leer ${data.length} perfiles` }
+    }
+    return { pass: true, detail: `Respuesta segura: ${res.status}` }
+  })
+
+  // Test 7: Bloqueo de acceso anónimo a audit_logs
+  await runTest('Bloqueo de lectura anónima en audit_logs', async () => {
+    const res = await fetch(`${supabaseUrl}/rest/v1/audit_logs?select=*&limit=10`, { headers })
+    const data = await res.json()
+    if (res.status === 401 || res.status === 403) {
+      return { pass: true, detail: `HTTP ${res.status} Acceso denegado correctamente` }
+    }
+    if (Array.isArray(data) && data.length === 0) {
+      return { pass: true, detail: 'Devuelve 0 registros (RLS activo sin política anon)' }
+    }
+    if (Array.isArray(data) && data.length > 0) {
+      return { pass: false, detail: `Vulnerabilidad: Anon pudo leer ${data.length} logs de auditoría` }
+    }
+    return { pass: true, detail: `Respuesta segura: ${res.status}` }
+  })
+
   console.log('\n---------------------------------------------------------')
   if (allPassed) {
-    console.log('🎉 ¡Todas las pruebas de seguridad de Fase 1 pasaron con éxito!')
+    console.log('🎉 ¡Todas las pruebas de seguridad perimetral pasaron con éxito!')
   } else {
-    console.log('⚠️ Se detectaron brechas de seguridad. Asegúrate de ejecutar 01_security_hardening.sql en Supabase.')
+    console.log('⚠️ Se detectaron brechas de seguridad. Asegúrate de ejecutar 007_cleanup_legacy_auth.sql en Supabase.')
   }
   console.log('---------------------------------------------------------\n')
 }

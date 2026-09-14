@@ -1,127 +1,36 @@
 -- ==============================================================================
--- PagoCheck - Fase 1: Blindaje de Seguridad y Grants Mínimos
+-- PagoCheck - Esquema Consolidado y Blindaje Integral de Base de Datos
 -- ==============================================================================
--- Objetivo: Cerrar accesos abiertos de 'anon', definir políticas CRUD explícitas
--- y preparar la infraestructura para Supabase Auth sin romper el flujo actual.
+-- Versión: 1.1.0+ (Arquitectura Limpia & Zero-Trust)
+-- Compatibilidad: Supabase (PostgreSQL 15+)
+--
+-- Componentes Integrados:
+-- 1. Extensiones (pgcrypto para contraseñas seguras y UUIDs).
+-- 2. Tablas del Sistema:
+--    - public.profiles (Vinculada a auth.users con RBAC multi-sucursal).
+--    - public.movements (Historial de transacciones con índice anti-duplicados).
+--    - public.audit_logs (Bitácora inmutable de auditoría y observabilidad).
+-- 3. Bucket Privado de Comprobantes (storage.buckets 'receipts' con RLS).
+-- 4. Funciones RBAC de Contexto (get_my_role, get_my_branch, get_my_username).
+-- 5. Trigger de Sincronización Automática auth.users -> public.profiles.
+-- 6. Políticas de Seguridad de Nivel de Fila (RLS) y Grants Mínimos.
 -- ==============================================================================
 
--- 1. Permisos base del esquema public
+-- ==============================================================================
+-- 1. Extensiones y Permisos Base
+-- ==============================================================================
+create extension if not exists pgcrypto with schema extensions;
 grant usage on schema public to anon, authenticated;
 
 -- ==============================================================================
--- 2. Tabla 'movements': Revocar accesos automáticos y definir RLS granular
+-- 2. Limpieza de Entidades Legacy Obsoletas
 -- ==============================================================================
-alter table public.movements enable row level security;
-
--- Revocar cualquier acceso amplio residual concedido por defecto
-revoke all on table public.movements from anon, public;
-
--- Eliminar políticas abiertas previas (que permitían a anon leer/escribir con 'status is not null')
-drop policy if exists movements_read on public.movements;
-drop policy if exists movements_insert on public.movements;
-drop policy if exists movements_select_policy on public.movements;
-drop policy if exists movements_insert_policy on public.movements;
-drop policy if exists movements_update_policy on public.movements;
-drop policy if exists movements_delete_policy on public.movements;
-
--- Política de LECTURA: Solo usuarios autenticados
-create policy movements_select_policy on public.movements
-  for select
-  to authenticated
-  using (true);
-
--- Política de INSERCIÓN: Solo usuarios autenticados con campos mínimos requeridos
-create policy movements_insert_policy on public.movements
-  for insert
-  to authenticated
-  with check (
-    type is not null and
-    amount is not null
-  );
-
--- Política de ACTUALIZACIÓN: Bloqueada por defecto para clientes (solo server-side / admin)
-create policy movements_update_policy on public.movements
-  for update
-  to authenticated
-  using (false);
-
--- Política de ELIMINACIÓN: Bloqueada para clientes directos
-create policy movements_delete_policy on public.movements
-  for delete
-  to authenticated
-  using (false);
-
--- Conceder únicamente SELECT e INSERT a usuarios autenticados
-grant select, insert on table public.movements to authenticated;
+drop table if exists public.app_users cascade;
+drop function if exists public.verify_login cascade;
+drop function if exists public.change_user_password cascade;
 
 -- ==============================================================================
--- 3. Tabla 'app_users' (Tabla legacy de transición)
--- ==============================================================================
-alter table public.app_users enable row level security;
-
--- Cerrar cualquier acceso directo a nivel de tabla para anon y public
-revoke all on table public.app_users from anon, public;
-drop policy if exists app_users_read on public.app_users;
-drop policy if exists app_users_update on public.app_users;
-
--- ==============================================================================
--- 4. Funciones RPC: Prevenir Secuestro de Search Path (search_path hijacking)
--- ==============================================================================
-
--- Función de login de transición (con search_path estricto)
-create or replace function public.verify_login(p_username text, p_password_hash text)
-returns table(username text, role text, label text, branch text)
-language plpgsql
-security definer
-set search_path = public, pg_temp as $$
-begin
-  -- Validación básica de parámetros para evitar consumo innecesario
-  if p_username is null or p_password_hash is null or length(trim(p_username)) = 0 then
-    return;
-  end if;
-
-  return query
-  select u.username, u.role, u.label, u.branch
-  from public.app_users u
-  where lower(u.username) = lower(trim(p_username))
-    and u.password_hash = p_password_hash;
-end;
-$$;
-
--- Función de cambio de clave protegida
-create or replace function public.change_user_password(p_username text, p_old_hash text, p_new_hash text)
-returns boolean
-language plpgsql
-security definer
-set search_path = public, pg_temp as $$
-declare
-  v_updated boolean := false;
-begin
-  if p_username is null or p_old_hash is null or p_new_hash is null then
-    return false;
-  end if;
-
-  update public.app_users
-  set password_hash = p_new_hash
-  where lower(username) = lower(trim(p_username))
-    and password_hash = p_old_hash;
-
-  if found then
-    v_updated := true;
-  end if;
-  return v_updated;
-end;
-$$;
-
--- verify_login debe seguir accesible a anon durante la Fase 1 para el login actual
-grant execute on function public.verify_login(text, text) to anon, authenticated;
-
--- change_user_password se revoca de anon: nadie debe cambiar claves anónimamente
-revoke execute on function public.change_user_password(text, text, text) from anon, public;
-grant execute on function public.change_user_password(text, text, text) to authenticated;
-
--- ==============================================================================
--- 5. Preparación de 'public.profiles' para Fase 2 (Enlazada a auth.users)
+-- 3. Tabla 'public.profiles' (Enlazada a auth.users)
 -- ==============================================================================
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -134,45 +43,140 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
-alter table public.profiles enable row level security;
+comment on table public.profiles is 'Perfiles de operadores vinculados a auth.users con roles y sucursales autorizadas.';
 
--- Revocar accesos por defecto a anon
-revoke all on table public.profiles from anon, public;
-
--- Políticas RLS para profiles
-drop policy if exists profiles_select_policy on public.profiles;
-create policy profiles_select_policy on public.profiles
-  for select
-  to authenticated
-  using (true);
-
-drop policy if exists profiles_update_policy on public.profiles;
-create policy profiles_update_policy on public.profiles
-  for update
-  to authenticated
-  using (auth.uid() = id);
-
-grant select on table public.profiles to authenticated;
-grant update (label, updated_at) on table public.profiles to authenticated;
-
--- Comentario informativo en base de datos
-comment on table public.profiles is 'Perfiles de empleados y operadores vinculados a auth.users (Fase 2).';
-comment on table public.movements is 'Registro de transacciones con RLS blindado a nivel de BD.';
 -- ==============================================================================
--- PagoCheck - Fase 2: Provisión de Usuarios Iniciales y Sincronización de Perfiles
--- ==============================================================================
--- Objetivo: Crear cuentas de cajeros y administradores en auth.users con contraseñas
--- encriptadas (bcrypt), sincronizar auth.identities y poblar la tabla public.profiles.
+-- 4. Funciones RBAC Auxiliares (Contexto del Operador Autenticado)
 -- ==============================================================================
 
--- 1. Habilitar extensión pgcrypto para encriptación de contraseñas
-create extension if not exists pgcrypto with schema extensions;
+-- Obtiene el rol del usuario conectado
+create or replace function public.get_my_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select role from public.profiles where id = auth.uid() limit 1;
+$$;
 
--- 2. Trigger automático para sincronizar nuevos usuarios de auth.users hacia public.profiles
+-- Obtiene la sucursal del usuario conectado
+create or replace function public.get_my_branch()
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select branch from public.profiles where id = auth.uid() limit 1;
+$$;
+
+-- Obtiene el username del usuario conectado
+create or replace function public.get_my_username()
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select username from public.profiles where id = auth.uid() limit 1;
+$$;
+
+-- ==============================================================================
+-- 5. Tabla 'public.movements' (Transacciones y Pagos Móviles)
+-- ==============================================================================
+create table if not exists public.movements (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  username text not null,
+  label text,
+  branch text,
+  type text not null check (type in ('pago', 'vuelto', 'anulacion')),
+  status text check (status in ('ok', 'confirmed', 'not-found', 'error', 'pending')),
+  amount text,
+  reference text,
+  phone text,
+  bank text,
+  cedula text,
+  note text,
+  receipt_image text,
+  provider text default 'banesco'
+);
+
+comment on table public.movements is 'Registro de transacciones con aislamiento multi-sucursal y blindaje anti-duplicados.';
+
+-- Índices de consulta rápida
+create index if not exists idx_movements_created_at on public.movements (created_at desc);
+create index if not exists idx_movements_branch on public.movements (branch);
+create index if not exists idx_movements_username on public.movements (username);
+
+-- ==============================================================================
+-- 6. Blindaje Anti-Duplicados a Nivel de Base de Datos
+-- ==============================================================================
+-- Impide registrar dos veces la misma transacción confirmada en el mismo banco.
+create unique index if not exists movements_unique_confirmed_reference
+on public.movements (
+  lower(coalesce(provider, 'banesco')),
+  lower(coalesce(bank, '')),
+  lower(trim(reference))
+)
+where (
+  status in ('ok', 'confirmed')
+  and reference is not null
+  and length(trim(reference)) > 0
+);
+
+-- ==============================================================================
+-- 7. Tabla 'public.audit_logs' (Bitácora Inmutable de Auditoría)
+-- ==============================================================================
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  timestamp timestamptz not null default now(),
+  action text not null,
+  entity_type text,
+  entity_id text,
+  status text not null check (status in ('success', 'failed', 'warning', 'info')),
+  latency_ms integer,
+  actor_id uuid references auth.users(id) on delete set null,
+  actor_username text not null,
+  actor_role text not null,
+  actor_branch text,
+  ip_address inet,
+  user_agent text,
+  details jsonb default '{}'::jsonb
+);
+
+comment on table public.audit_logs is 'Registro inmutable de trazabilidad forense y observabilidad operativa.';
+
+create index if not exists idx_audit_logs_timestamp on public.audit_logs (timestamp desc);
+create index if not exists idx_audit_logs_action on public.audit_logs (action);
+create index if not exists idx_audit_logs_actor_username on public.audit_logs (actor_username);
+create index if not exists idx_audit_logs_actor_branch on public.audit_logs (actor_branch);
+
+-- ==============================================================================
+-- 8. Almacenamiento Seguro de Comprobantes (Storage Bucket 'receipts')
+-- ==============================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'receipts',
+  'receipts',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+)
+on conflict (id) do update set
+  public = false,
+  file_size_limit = 5242880,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+-- ==============================================================================
+-- 9. Trigger de Sincronización Automática (auth.users -> public.profiles)
+-- ==============================================================================
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public, pg_temp as $$
+security definer
+set search_path = public, pg_temp as $$
 begin
   insert into public.profiles (id, username, role, label, branch, active)
   values (
@@ -200,7 +204,136 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- 3. Procedimiento auxiliar para registrar usuarios en Supabase Auth y Profiles
+-- ==============================================================================
+-- 10. Políticas RLS (Row Level Security)
+-- ==============================================================================
+
+-- A. Tablas del Sistema: Habilitar RLS
+alter table public.profiles enable row level security;
+alter table public.movements enable row level security;
+alter table public.audit_logs enable row level security;
+
+-- Revocar accesos por defecto a roles públicos y anónimos
+revoke all on table public.profiles from anon, public;
+revoke all on table public.movements from anon, public;
+revoke all on table public.audit_logs from anon, public;
+
+-- ------------------------------------------------------------------------------
+-- Políticas para 'public.profiles'
+-- ------------------------------------------------------------------------------
+drop policy if exists profiles_select_policy on public.profiles;
+create policy profiles_select_policy on public.profiles
+  for select to authenticated
+  using (true);
+
+drop policy if exists profiles_update_policy on public.profiles;
+create policy profiles_update_policy on public.profiles
+  for update to authenticated
+  using (auth.uid() = id);
+
+grant select on table public.profiles to authenticated;
+grant update (label, updated_at) on table public.profiles to authenticated;
+
+-- ------------------------------------------------------------------------------
+-- Políticas para 'public.movements' (Aislamiento Multi-Sucursal RBAC)
+-- ------------------------------------------------------------------------------
+drop policy if exists movements_select_policy on public.movements;
+create policy movements_select_policy on public.movements
+  for select to authenticated
+  using (
+    public.get_my_role() = 'admin' and (public.get_my_branch() is null or public.get_my_branch() = '')
+    or (branch is not null and branch = public.get_my_branch())
+    or (username = public.get_my_username())
+  );
+
+drop policy if exists movements_insert_policy on public.movements;
+create policy movements_insert_policy on public.movements
+  for insert to authenticated
+  with check (
+    type is not null and
+    amount is not null and (
+      (public.get_my_role() = 'admin' and (public.get_my_branch() is null or public.get_my_branch() = ''))
+      or (branch = public.get_my_branch())
+      or (username = public.get_my_username())
+    )
+  );
+
+drop policy if exists movements_update_policy on public.movements;
+create policy movements_update_policy on public.movements
+  for update to authenticated
+  using (false);
+
+drop policy if exists movements_delete_policy on public.movements;
+create policy movements_delete_policy on public.movements
+  for delete to authenticated
+  using (false);
+
+grant select, insert on table public.movements to authenticated;
+
+-- ------------------------------------------------------------------------------
+-- Políticas para 'public.audit_logs' (Inmutabilidad Estricta)
+-- ------------------------------------------------------------------------------
+drop policy if exists audit_logs_select_policy on public.audit_logs;
+create policy audit_logs_select_policy on public.audit_logs
+  for select to authenticated
+  using (
+    (public.get_my_role() = 'admin' and (public.get_my_branch() is null or public.get_my_branch() = ''))
+    or (public.get_my_role() = 'admin' and actor_branch = public.get_my_branch())
+    or (actor_username = public.get_my_username())
+  );
+
+drop policy if exists audit_logs_insert_policy on public.audit_logs;
+create policy audit_logs_insert_policy on public.audit_logs
+  for insert to authenticated
+  with check (
+    actor_id = auth.uid() or actor_id is null
+  );
+
+drop policy if exists audit_logs_update_policy on public.audit_logs;
+create policy audit_logs_update_policy on public.audit_logs
+  for update to authenticated
+  using (false);
+
+drop policy if exists audit_logs_delete_policy on public.audit_logs;
+create policy audit_logs_delete_policy on public.audit_logs
+  for delete to authenticated
+  using (false);
+
+grant select, insert on table public.audit_logs to authenticated;
+
+-- ------------------------------------------------------------------------------
+-- Políticas para 'storage.objects' (Bucket 'receipts')
+-- ------------------------------------------------------------------------------
+drop policy if exists receipts_select_policy on storage.objects;
+create policy receipts_select_policy on storage.objects
+  for select to authenticated
+  using (bucket_id = 'receipts');
+
+drop policy if exists receipts_insert_policy on storage.objects;
+create policy receipts_insert_policy on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'receipts');
+
+drop policy if exists receipts_update_policy on storage.objects;
+create policy receipts_update_policy on storage.objects
+  for update to authenticated
+  using (bucket_id = 'receipts');
+
+drop policy if exists receipts_delete_policy on storage.objects;
+create policy receipts_delete_policy on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'receipts'
+    and (public.get_my_role() = 'admin' and (public.get_my_branch() is null or public.get_my_branch() = ''))
+  );
+
+-- ==============================================================================
+-- Fin del Esquema Consolidado
+-- ==============================================================================
+
+-- ==============================================================================
+-- 11. Provisión de Usuarios Iniciales en auth.users y public.profiles
+-- ==============================================================================
 create or replace function public.seed_pago_user(
   p_username text,
   p_password text,
@@ -219,13 +352,11 @@ declare
 begin
   v_encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf', 10));
 
-  -- Buscar si el usuario ya existe en auth.users
   select id into v_user_id from auth.users where lower(email) = lower(v_email);
 
   if v_user_id is null then
     v_user_id := gen_random_uuid();
 
-    -- Inserción en auth.users
     insert into auth.users (
       instance_id,
       id,
@@ -265,7 +396,6 @@ begin
       ''
     );
 
-    -- Inserción en auth.identities para autenticación con email/password
     insert into auth.identities (
       id,
       user_id,
@@ -286,7 +416,6 @@ begin
       now()
     );
   else
-    -- Si ya existe, sincronizar credenciales y metadata
     update auth.users
     set encrypted_password = v_encrypted_pw,
         raw_user_meta_data = jsonb_build_object(
@@ -299,7 +428,6 @@ begin
     where id = v_user_id;
   end if;
 
-  -- Asegurar sincronización en public.profiles
   insert into public.profiles (id, username, role, label, branch, active)
   values (v_user_id, lower(trim(p_username)), p_role, p_label, p_branch, true)
   on conflict (id) do update set
@@ -312,7 +440,6 @@ begin
 end;
 $$;
 
--- 4. Semilla de cuentas del sistema
 -- Tienda 1 (Bella Vista)
 select public.seed_pago_user('admin_t1', 'admin1', 'admin', 'Admin Bella Vista', 'Tienda 1 (Bella Vista)');
 select public.seed_pago_user('caja1', 'caja1', 'caja', 'Caja 1', 'Tienda 1 (Bella Vista)');
@@ -341,324 +468,5 @@ select public.seed_pago_user('bot_service', 'bot', 'bot', 'Asistente WhatsApp', 
 -- Dueño de la Empresa (Administrador General de todas las sucursales)
 select public.seed_pago_user('admin', 'admin123', 'admin', 'Dueño / Admin General', null);
 
--- Limpieza preventiva: eliminar función de seed para que no quede expuesta
+-- Limpieza preventiva
 drop function if exists public.seed_pago_user(text, text, text, text, text);
--- ==============================================================================
--- PagoCheck - Fase 3: RBAC y Aislamiento Multi-Sucursal (DB-Level Enforcement)
--- ==============================================================================
--- Objetivo: Garantizar que la autorización y el aislamiento por sucursal se
--- ejecuten directamente en PostgreSQL mediante Row Level Security (RLS).
--- ==============================================================================
-
--- 1. Funciones auxiliares para consulta de identidad en RLS (rápidas, STABLE y seguras)
-create or replace function public.get_my_role()
-returns text
-language sql
-stable
-security definer
-set search_path = public, pg_temp as $$
-  select role from public.profiles where id = auth.uid();
-$$;
-
-create or replace function public.get_my_branch()
-returns text
-language sql
-stable
-security definer
-set search_path = public, pg_temp as $$
-  select branch from public.profiles where id = auth.uid();
-$$;
-
-create or replace function public.get_my_username()
-returns text
-language sql
-stable
-security definer
-set search_path = public, pg_temp as $$
-  select username from public.profiles where id = auth.uid();
-$$;
-
-grant execute on function public.get_my_role() to authenticated;
-grant execute on function public.get_my_branch() to authenticated;
-grant execute on function public.get_my_username() to authenticated;
-
--- ==============================================================================
--- 2. Políticas RLS Estrictas para 'public.movements'
--- ==============================================================================
-
--- Eliminar políticas previas más permisivas
-drop policy if exists movements_select_policy on public.movements;
-drop policy if exists movements_insert_policy on public.movements;
-
--- Política de LECTURA (SELECT):
--- - El Dueño de la empresa (admin sin sucursal fija) tiene visibilidad consolidada total.
--- - El Admin de sucursal solo ve transacciones de su sucursal.
--- - El Cajero solo ve transacciones de su sucursal asignada.
--- - El Bot tiene acceso a operaciones de delivery / bot.
-create policy movements_select_policy on public.movements
-  for select
-  to authenticated
-  using (
-    -- 1. Dueño / Administrador General (sin sucursal fija asignada)
-    (public.get_my_role() = 'admin' and public.get_my_branch() is null)
-    or
-    -- 2. Administrador de Sucursal (ve toda su tienda)
-    (public.get_my_role() = 'admin' and branch = public.get_my_branch())
-    or
-    -- 3. Cajero (ve movimientos de su sucursal)
-    (public.get_my_role() = 'caja' and branch = public.get_my_branch())
-    or
-    -- 4. Bot / WhatsApp (ve movimientos de delivery)
-    (public.get_my_role() = 'bot')
-  );
-
--- Política de INSERCIÓN (INSERT):
--- - Impide que un usuario registre transacciones en otra sucursal distinta a la suya.
--- - Impide que un cajero suplante el nombre de usuario de otro cajero.
-create policy movements_insert_policy on public.movements
-  for insert
-  to authenticated
-  with check (
-    -- Campos mínimos obligatorios
-    type is not null and
-    amount is not null and
-    -- Restricción de sucursal: solo su sucursal asignada (salvo el Dueño general)
-    (public.get_my_branch() is null or branch = public.get_my_branch()) and
-    -- Restricción de autoría: el username debe coincidir con el autenticado (salvo administradores)
-    (public.get_my_role() = 'admin' or lower(username) = lower(public.get_my_username()))
-  );
-
--- 3. Actualizar políticas de lectura de perfiles para respetar RBAC
-drop policy if exists profiles_select_policy on public.profiles;
-create policy profiles_select_policy on public.profiles
-  for select
-  to authenticated
-  using (
-    -- Dueño ve todos los perfiles
-    (public.get_my_role() = 'admin' and public.get_my_branch() is null)
-    or
-    -- Admin de sucursal ve los perfiles de su propia tienda
-    (public.get_my_role() = 'admin' and branch = public.get_my_branch())
-    or
-    -- Usuarios regulares ven su propio perfil o compañeros de la misma sucursal
-    (branch = public.get_my_branch() or id = auth.uid())
-  );
--- ==============================================================================
--- PagoCheck - Fase 4: Integridad de Base de Datos y Anti-Duplicados en PostgreSQL
--- ==============================================================================
--- Objetivo: Establecer a PostgreSQL como la autoridad final para prevenir
--- transacciones duplicadas e impedir estados de datos imposibles o inconsistentes.
--- ==============================================================================
-
--- 1. Agregar columna 'provider' para identificar el canal bancario
-alter table public.movements add column if not exists provider text not null default 'banesco';
-
--- 2. Normalizar registros existentes antes de aplicar los constraints
-update public.movements
-set status = case
-  when lower(trim(coalesce(status, ''))) in ('confirmed', 'confirmado', 'ok', 'exitoso', 'success') then 'confirmed'
-  when lower(trim(coalesce(status, ''))) in ('simulado', 'vuelto_simulado') then 'simulado'
-  when lower(trim(coalesce(status, ''))) in ('not-found', 'not_found', 'no_encontrado') then 'not-found'
-  when lower(trim(coalesce(status, ''))) in ('error', 'fallido') then 'error'
-  when lower(trim(coalesce(status, ''))) in ('pending', 'pendiente') then 'pending'
-  else 'confirmed'
-end
-where status is null or status not in ('confirmed', 'simulado', 'not-found', 'error', 'ok', 'pending');
-
-update public.movements
-set type = case
-  when lower(trim(coalesce(type, ''))) in ('vuelto', 'cambio') then 'vuelto'
-  else 'validacion'
-end
-where type is null or type not in ('validacion', 'vuelto');
-
--- 3. Restricciones CHECK para garantizar tipos y estados válidos
-alter table public.movements drop constraint if exists movements_type_check;
-alter table public.movements add constraint movements_type_check
-  check (type in ('validacion', 'vuelto'));
-
-alter table public.movements drop constraint if exists movements_status_check;
-alter table public.movements add constraint movements_status_check
-  check (status in ('confirmed', 'simulado', 'not-found', 'error', 'ok', 'pending'));
-
--- 4. Índice ÚNICO PARCIAL Anti-Duplicados (Autoridad Máxima en PostgreSQL)
--- Solo protege transacciones exitosas/confirmadas que tengan una referencia no vacía.
--- Permite reintentos si una operación previa falló por red ('not-found' o 'error').
-drop index if exists public.movements_provider_bank_ref_idx;
-create unique index movements_provider_bank_ref_idx
-  on public.movements (
-    lower(trim(provider)),
-    lower(trim(bank)),
-    lower(trim(reference))
-  )
-  where reference is not null and trim(reference) <> '' and status in ('confirmed', 'ok');
-
--- 5. Índices de Rendimiento para consultas y ordenamientos habituales
-create index if not exists idx_movements_created_at
-  on public.movements (created_at desc);
-
-create index if not exists idx_movements_branch_created
-  on public.movements (branch, created_at desc);
-
-create index if not exists idx_movements_ref_lookup
-  on public.movements (lower(trim(reference)));
-
--- Comentarios documentales en PostgreSQL
-comment on index public.movements_provider_bank_ref_idx is 'Previene físicamente pagos duplicados para una misma referencia y banco en operaciones confirmadas.';
-comment on column public.movements.provider is 'Proveedor o procesador bancario de la operación (ej: banesco, manual).';
--- ============================================================================
--- PagoCheck - Migración 05: Configuración de Storage y Políticas de Comprobantes
--- ============================================================================
-
--- 1. Crear o actualizar el bucket privado 'receipts'
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'receipts',
-  'receipts',
-  false,
-  5242880, -- 5 MB máximo por comprobante
-  array['image/jpeg', 'image/png', 'image/webp', 'image/heic']
-)
-on conflict (id) do update set
-  public = false,
-  file_size_limit = 5242880,
-  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
-
--- 2. Eliminar políticas previas si existían
-drop policy if exists "Authenticated users can upload receipts" on storage.objects;
-drop policy if exists "Users can view authorized receipts" on storage.objects;
-drop policy if exists "Admins can delete receipts" on storage.objects;
-
--- 3. Política de Subida (INSERT)
--- Cualquier usuario autenticado (cajero, admin, bot) puede subir comprobantes al bucket receipts
-create policy "Authenticated users can upload receipts"
-on storage.objects for insert
-to authenticated
-with check (
-  bucket_id = 'receipts'
-);
-
--- 4. Política de Lectura (SELECT)
--- - El usuario que subió la imagen (owner/owner_id) siempre tiene acceso.
--- - El dueño general (admin) tiene acceso a todos los comprobantes.
--- - Los cajeros y administradores de sucursal acceden a comprobantes vinculados
---   a movimientos que su RLS les permite ver.
-create policy "Users can view authorized receipts"
-on storage.objects for select
-to authenticated
-using (
-  bucket_id = 'receipts'
-  and (
-    -- Usuario que subió el objeto (compatible con auth.uid() en owner o owner_id)
-    (auth.uid() is not null and (auth.uid() = owner or auth.uid()::text = owner_id))
-    -- Dueño general (sin sucursal fija o username admin)
-    or public.get_my_username() = 'admin'
-    or (public.get_my_role() = 'admin' and public.get_my_branch() is null)
-    -- Enlazado a un movimiento visible en la sucursal del usuario
-    or exists (
-      select 1 from public.movements m
-      where m.receipt_image = storage.objects.name
-    )
-  )
-);
-
--- 5. Política de Eliminación (DELETE)
--- Solo el dueño general o administradores pueden eliminar comprobantes
-create policy "Admins can delete receipts"
-on storage.objects for delete
-to authenticated
-using (
-  bucket_id = 'receipts'
-  and (
-    public.get_my_username() = 'admin'
-    or (public.get_my_role() = 'admin' and public.get_my_branch() is null)
-  )
-);
--- ==============================================================================
--- PagoCheck - Fase 9: Bitácora Inmutable de Auditoría y Observabilidad (audit_logs)
--- ==============================================================================
--- Objetivo: Proporcionar trazabilidad forense inmutable de todas las verificaciones
--- bancarias, intentos de duplicados, operaciones de vuelto y eventos de seguridad.
--- ==============================================================================
-
--- 1. Crear tabla 'public.audit_logs'
-create table if not exists public.audit_logs (
-  id uuid default gen_random_uuid() primary key,
-  created_at timestamptz default now() not null,
-  actor_id uuid references auth.users(id) on delete set null,
-  actor_username text,
-  actor_branch text,
-  action text not null,
-  entity_type text,
-  entity_id text,
-  status text not null check (status in ('success', 'warning', 'error', 'info')),
-  details jsonb default '{}'::jsonb,
-  duration_ms integer
-);
-
--- Comentarios de documentación en base de datos
-comment on table public.audit_logs is 'Bitácora inmutable de eventos críticos de negocio, verificaciones bancarias y seguridad.';
-comment on column public.audit_logs.action is 'Código de evento: VERIFY_ATTEMPT, VERIFY_CONFIRMED, VERIFY_NOT_FOUND, VERIFY_ERROR, VERIFY_DUPLICATE_BLOCKED, VUELTO_ISSUED, etc.';
-comment on column public.audit_logs.duration_ms is 'Latencia de respuesta de la pasarela bancaria o Edge Function en milisegundos.';
-
--- ==============================================================================
--- 2. Índices de Rendimiento y Búsqueda
--- ==============================================================================
-create index if not exists idx_audit_logs_created_at
-  on public.audit_logs (created_at desc);
-
-create index if not exists idx_audit_logs_branch_created
-  on public.audit_logs (actor_branch, created_at desc);
-
-create index if not exists idx_audit_logs_action
-  on public.audit_logs (action, created_at desc);
-
-create index if not exists idx_audit_logs_entity
-  on public.audit_logs (entity_type, entity_id);
-
--- ==============================================================================
--- 3. Inmutabilidad y Permisos Estrictos (Anti-Tampering)
--- ==============================================================================
--- Asegurar que la tabla tenga Row Level Security activado
-alter table public.audit_logs enable row level security;
-
--- Revocar explícitamente UPDATE y DELETE para garantizar inmutabilidad
-revoke update, delete on public.audit_logs from anon, authenticated;
-
--- Revocar cualquier acceso a anónimos
-revoke all on public.audit_logs from anon;
-
--- Otorgar solo INSERT y SELECT al rol autenticado
-grant select, insert on public.audit_logs to authenticated;
-
--- ==============================================================================
--- 4. Políticas RLS para 'public.audit_logs'
--- ==============================================================================
-drop policy if exists audit_logs_insert_policy on public.audit_logs;
-drop policy if exists audit_logs_select_policy on public.audit_logs;
-
--- Política de INSERCIÓN: Cualquier usuario autenticado puede insertar logs de auditoría
--- vinculados a su propia sesión
-create policy audit_logs_insert_policy
-  on public.audit_logs
-  for insert
-  to authenticated
-  with check (
-    actor_id = auth.uid() or actor_id is null
-  );
-
--- Política de LECTURA (SELECT):
--- - 'admin' (dueño): Visibilidad consolidada de todos los eventos del negocio.
--- - 'admin_sucursal': Visibilidad estricta únicamente de los eventos de su sucursal.
--- - 'cajero': No tiene acceso de lectura a la bitácora general de seguridad.
-create policy audit_logs_select_policy
-  on public.audit_logs
-  for select
-  to authenticated
-  using (
-    public.get_my_role() = 'admin'
-    or (
-      public.get_my_role() in ('admin_sucursal', 'admin_tienda')
-      and actor_branch = public.get_my_branch()
-    )
-  );
