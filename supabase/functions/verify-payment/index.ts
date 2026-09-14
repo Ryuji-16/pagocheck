@@ -56,13 +56,17 @@ serve(async (req) => {
       )
     }
 
+    const startTime = performance.now()
+
     // 4. Conectar con el proveedor bancario (Secretos seguros en el servidor)
     const banescoApiUrl = Deno.env.get('BANESCO_API_URL')
     const banescoApiKey = Deno.env.get('BANESCO_API_KEY')
 
+    let responsePayload: Record<string, unknown>
+    let httpStatus = 200
+
     // Si existen credenciales reales configuradas en las variables del servidor:
     if (banescoApiUrl && banescoApiKey) {
-      // Llamada real a la API del banco
       const bankRes = await fetch(`${banescoApiUrl}/v1/verify`, {
         method: 'POST',
         headers: {
@@ -71,48 +75,31 @@ serve(async (req) => {
         },
         body: JSON.stringify({ reference, bank, amount, phone, date })
       })
-
-      const bankData = await bankRes.json()
-      return new Response(
-        JSON.stringify(bankData),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // 5. Fallback server-side a simulación controlada (Modo desarrollo/staging)
-    if (reference === '111111111') {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          status: 'not-found',
-          code: 'NOT_FOUND',
-          message: 'La transacción no pudo ser localizada en el banco.',
-          reference,
-          bank,
-          provider: 'banesco-edge-mock'
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (reference === '999999999') {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          status: 'error',
-          code: 'BANK_TIMEOUT',
-          message: 'Error al procesar la operación en la red bancaria.',
-          reference,
-          bank,
-          provider: 'banesco-edge-mock'
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Éxito en la verificación
-    return new Response(
-      JSON.stringify({
+      responsePayload = await bankRes.json()
+      httpStatus = bankRes.status
+    } else if (reference === '111111111') {
+      responsePayload = {
+        ok: false,
+        status: 'not-found',
+        code: 'NOT_FOUND',
+        message: 'La transacción no pudo ser localizada en el banco.',
+        reference,
+        bank,
+        provider: 'banesco-edge-mock'
+      }
+    } else if (reference === '999999999') {
+      responsePayload = {
+        ok: false,
+        status: 'error',
+        code: 'BANK_TIMEOUT',
+        message: 'Error al procesar la operación en la red bancaria.',
+        reference,
+        bank,
+        provider: 'banesco-edge-mock'
+      }
+    } else {
+      // Éxito en la verificación simulada
+      responsePayload = {
         ok: true,
         status: 'confirmed',
         amount: amount || 'Bs. 150,00',
@@ -121,8 +108,38 @@ serve(async (req) => {
         bank,
         phone,
         provider: 'banesco-edge-mock'
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      }
+    }
+
+    const durationMs = Math.round(performance.now() - startTime)
+    const statusVal = String(responsePayload.status || '')
+
+    // 5. Registro forense de auditoría server-side
+    try {
+      await supabase.from('audit_logs').insert([{
+        actor_id: user.id,
+        actor_username: user.user_metadata?.username || user.email?.split('@')[0] || 'usuario',
+        actor_branch: user.user_metadata?.branch || 'general',
+        action: statusVal === 'confirmed' ? 'VERIFY_CONFIRMED' : statusVal === 'not-found' ? 'VERIFY_NOT_FOUND' : 'VERIFY_ERROR',
+        entity_type: 'payment',
+        entity_id: reference,
+        status: statusVal === 'confirmed' ? 'success' : statusVal === 'not-found' ? 'warning' : 'error',
+        details: {
+          server_side: true,
+          provider: responsePayload.provider || 'banesco',
+          bank,
+          phone,
+          amount
+        },
+        duration_ms: durationMs
+      }])
+    } catch (_logErr) {
+      // Logging no bloqueante
+    }
+
+    return new Response(
+      JSON.stringify(responsePayload),
+      { status: httpStatus, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     return new Response(

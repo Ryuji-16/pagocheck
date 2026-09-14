@@ -2,12 +2,15 @@ import { useState } from 'react'
 import SettingsSecurityTab from './SettingsSecurityTab'
 import SettingsBusinessTab from './SettingsBusinessTab'
 import SettingsStorageTab from './SettingsStorageTab'
+import SettingsAuditTab from './SettingsAuditTab'
 import './css/Modals.css'
 import './css/Settings.css'
 
 function Settings({ session, username, onBack }) {
   const [activeTab, setActiveTab] = useState('security')
   const isAdmin = session?.role === 'admin'
+  const isBranchAdmin = session?.role === 'admin_sucursal' || session?.role === 'admin_tienda'
+  const canViewAudit = isAdmin || isBranchAdmin
   const resolvedUsername = username || session?.username || 'usuario'
 
   const tabs = [
@@ -16,6 +19,11 @@ function Settings({ session, username, onBack }) {
       ? [
           { id: 'business', label: 'Negocio', icon: '🏢' },
           { id: 'storage', label: 'Almacenamiento', icon: '💾' }
+        ]
+      : []),
+    ...(canViewAudit
+      ? [
+          { id: 'audit', label: 'Auditoría', icon: '📜' }
         ]
       : [])
   ]
@@ -77,6 +85,10 @@ function Settings({ session, username, onBack }) {
 
           {activeTab === 'storage' && isAdmin && (
             <SettingsStorageTab session={session} />
+          )}
+
+          {activeTab === 'audit' && canViewAudit && (
+            <SettingsAuditTab session={session} />
           )}
         </div>
       </div>

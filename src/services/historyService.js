@@ -1,6 +1,7 @@
 import { getSession } from './authService.js'
 import { isRemoteDbEnabled, remoteRequest } from './supabaseClient.js'
 import { parseDate } from '../utils/formatters.js'
+import { recordAuditEvent, AUDIT_ACTIONS } from './auditService.js'
 
 const HISTORY_KEY = 'pagocheck-movements'
 
@@ -202,6 +203,20 @@ export async function saveMovement(entry) {
     }
     if (row && item.branch && !row.branch) {
       row.branch = item.branch
+    }
+    if (row && item.type === 'vuelto') {
+      recordAuditEvent({
+        action: AUDIT_ACTIONS.VUELTO_ISSUED,
+        entityType: 'vuelto',
+        entityId: item.reference || item.phone,
+        status: 'success',
+        details: {
+          amount: item.amount,
+          phone: item.phone,
+          bank: item.bank,
+          cedula: item.cedula
+        }
+      })
     }
     return row ? toListItem(row) : null
   }

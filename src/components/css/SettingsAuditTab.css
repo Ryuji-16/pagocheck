@@ -1,0 +1,294 @@
+/* =========================================================
+   PAGOCHECK — SETTINGS AUDIT TAB (BITÁCORA Y OBSERVABILIDAD)
+   ========================================================= */
+
+.settings-audit-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* =========================================================
+   BARRA DE FILTROS Y ACCIONES
+   ========================================================= */
+
+.settings-audit-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+}
+
+.settings-audit-filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-audit-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.settings-audit-select {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition-theme);
+}
+
+.settings-audit-select:focus {
+  border-color: var(--primary);
+}
+
+.settings-audit-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: var(--transition-theme);
+}
+
+.settings-audit-refresh-btn:hover:not(:disabled) {
+  background: var(--card-hover);
+  border-color: var(--card-border-strong);
+}
+
+.settings-audit-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   TARJETAS DE MÉTRICAS RÁPIDAS (KPIS)
+   ========================================================= */
+
+.settings-audit-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.settings-audit-kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.settings-audit-kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.settings-audit-kpi-value.accent {
+  color: var(--primary);
+}
+
+.settings-audit-kpi-value.warning {
+  color: #f59e0b;
+}
+
+.settings-audit-kpi-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   CONTENEDOR DE TABLA DE EVENTOS
+   ========================================================= */
+
+.settings-audit-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.settings-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.settings-audit-table th {
+  padding: 10px 14px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--card-border);
+  white-space: nowrap;
+}
+
+.settings-audit-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.settings-audit-table tr:last-child td {
+  border-bottom: none;
+}
+
+.settings-audit-table tr:hover td {
+  background: var(--card-hover);
+}
+
+/* =========================================================
+   BADGES Y PILLS
+   ========================================================= */
+
+.audit-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.audit-status-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.audit-status-badge.success {
+  background: rgba(0, 229, 163, 0.15);
+  color: #00e5a3;
+  border: 1px solid rgba(0, 229, 163, 0.3);
+}
+
+.audit-status-badge.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.audit-status-badge.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.audit-status-badge.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.audit-latency-pill {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+}
+
+.audit-latency-fast {
+  color: #00e5a3;
+}
+
+.audit-latency-medium {
+  color: #f59e0b;
+}
+
+.audit-latency-slow {
+  color: #ef4444;
+}
+
+.audit-actor-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.audit-actor-name {
+  font-weight: 600;
+}
+
+.audit-actor-branch {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.audit-date-cell {
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.audit-ref-code {
+  font-family: var(--font-code);
+  font-weight: 600;
+}
+
+/* =========================================================
+   ESTADO VACÍO Y CARGA
+   ========================================================= */
+
+.settings-audit-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.settings-audit-empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+
+.settings-audit-loading {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
