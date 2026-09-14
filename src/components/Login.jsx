@@ -78,7 +78,7 @@ function Login({ onLogin, theme: propTheme, onToggleTheme }) {
             <div className="login-brand-text">
               <div className="login-brand-title">
                 PagoCheck
-                <span className="login-version-badge">POS v3.2</span>
+                <span className="login-version-badge">POS v1.1</span>
               </div>
               <span className="login-brand-subtitle">Punto de Validación</span>
             </div>

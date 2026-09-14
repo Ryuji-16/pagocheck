@@ -183,7 +183,7 @@ function NavigationDrawer({
           </button>
 
           <div className="drawer-footer-version">
-            <span>PagoCheck Cloud POS · v1.0.0</span>
+            <span>PagoCheck Cloud POS · v1.1.0</span>
           </div>
         </footer>
       </div>
