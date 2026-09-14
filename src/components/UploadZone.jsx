@@ -88,10 +88,6 @@ function UploadZone({ onBack }) {
     handleFile(selectedFile)
   }
 
-  function handleChangeFile() {
-    document.getElementById('file-upload')?.click()
-  }
-
   async function handleVerify(data = {}) {
     setIsVerifying(true)
     setVerificationResult(null)
@@ -325,6 +321,15 @@ function UploadZone({ onBack }) {
               hidden
             />
 
+            <input
+              id="camera-upload"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              hidden
+            />
+
             {/* SIN IMAGEN */}
             {!preview && (
               <div
@@ -342,16 +347,22 @@ function UploadZone({ onBack }) {
                 </h3>
 
                 <p>
-                  También puedes seleccionar una imagen o pegarla
-                  desde el portapapeles
+                  Toma una foto con tu cámara, elige una imagen de tu galería o pégala del portapapeles
                 </p>
 
                 <div className="upload-actions">
                   <label
+                    htmlFor="camera-upload"
+                    className="camera-upload-button"
+                  >
+                    📸 Tomar foto
+                  </label>
+
+                  <label
                     htmlFor="file-upload"
                     className="upload-button"
                   >
-                    Seleccionar archivo
+                    📁 Galería / Archivo
                   </label>
 
                   <button
@@ -387,13 +398,21 @@ function UploadZone({ onBack }) {
                   </p>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleChangeFile}
-                  className="change-button"
-                >
-                  ↻ Cambiar imagen
-                </button>
+                <div className="preview-change-actions">
+                  <label
+                    htmlFor="camera-upload"
+                    className="change-button"
+                  >
+                    📸 Tomar otra foto
+                  </label>
+
+                  <label
+                    htmlFor="file-upload"
+                    className="change-button"
+                  >
+                    📁 Cambiar archivo
+                  </label>
+                </div>
 
                 {extractError && (
                   <p className="form-error">{extractError}</p>
@@ -406,8 +425,8 @@ function UploadZone({ onBack }) {
                   disabled={isVerifying}
                 >
                   {isVerifying
-                    ? '🔄 Analizando comprobante...'
-                    : '✓ Verificar pago'}
+                    ? '🔄 Analizando comprobante con OCR...'
+                    : '🔍 Analizar comprobante (OCR)'}
                 </button>
 
               </div>
