@@ -54,7 +54,7 @@ async function run() {
     Teléfono Destino: 0424-9876543
   `
   const banescoRes = parsePaymentText(banescoText)
-  assert(banescoRes.reference === '001294857102', `Referencia completa sin truncar: ${banescoRes.reference}`)
+  assert(banescoRes.reference === '857102', `Referencia últimos 6 dígitos: ${banescoRes.reference}`)
   assert(banescoRes.bank.includes('Banesco'), `Banco detectado Banesco: ${banescoRes.bank}`)
   assert(banescoRes.amount === 'Bs. 1.450,00', `Monto normalizado: ${banescoRes.amount}`)
   assert(banescoRes.phone === '0414-1234567', `Teléfono emisor: ${banescoRes.phone}`)
@@ -73,7 +73,7 @@ async function run() {
     Fecha: 13 de septiembre de 2026
   `
   const bdvRes = parsePaymentText(bdvText)
-  assert(bdvRes.reference === '987654321', `Referencia BDV: ${bdvRes.reference}`)
+  assert(bdvRes.reference === '654321', `Referencia BDV últimos 6 dígitos: ${bdvRes.reference}`)
   assert(bdvRes.bank.includes('Venezuela'), `Banco detectado Venezuela: ${bdvRes.bank}`)
   assert(bdvRes.amount === 'Bs. 350,50', `Monto normalizado: ${bdvRes.amount}`)
   assert(bdvRes.date === '13/09/2026', `Fecha nombrada convertida: ${bdvRes.date}`)
@@ -90,7 +90,7 @@ async function run() {
     Fecha: 10/09/2026
   `
   const mercantilRes = parsePaymentText(mercantilText)
-  assert(mercantilRes.reference === '0184920', `Referencia con 'O' convertida a '0': ${mercantilRes.reference}`)
+  assert(mercantilRes.reference === '184920', `Referencia con 'O' convertida a '0' (6 dígitos): ${mercantilRes.reference}`)
   assert(mercantilRes.bank.includes('Mercantil'), `Banco detectado Mercantil: ${mercantilRes.bank}`)
   assert(mercantilRes.amount === 'Bs. 80,00', `Monto normalizado: ${mercantilRes.amount}`)
 
@@ -104,7 +104,7 @@ async function run() {
     Fecha: 11/09/2026
   `
   const provincialRes = parsePaymentText(provincialText)
-  assert(provincialRes.reference === '54321098', `Referencia Provincial: ${provincialRes.reference}`)
+  assert(provincialRes.reference === '321098', `Referencia Provincial (6 dígitos): ${provincialRes.reference}`)
   assert(provincialRes.bank.includes('Provincial'), `Banco detectado Provincial: ${provincialRes.bank}`)
 
   const bancamigaText = `
@@ -135,7 +135,7 @@ async function run() {
     códula vasena7s
   `
   const ubiiRes = parsePaymentText(ubiiText)
-  assert(ubiiRes.reference === '000000755544', `Referencia Ubii exacta: ${ubiiRes.reference}`)
+  assert(ubiiRes.reference === '755544', `Referencia Ubii 6 dígitos: ${ubiiRes.reference}`)
   assert(ubiiRes.bank.includes('Venezolano de Crédito'), `Banco emisor Ubii detectado: ${ubiiRes.bank}`)
   assert(ubiiRes.date === '10/08/2026', `Fecha Ubii parseada: ${ubiiRes.date}`)
   assert(ubiiRes.amount === 'Bs. 1.162,33', `Monto Ubii extraído: ${ubiiRes.amount}`)
@@ -147,7 +147,7 @@ async function run() {
   console.log('\n• [7/8] Probando robustez contra ruido OCR (13 dígitos y fragmentos telefónicos)...')
   const noisyRefText = `Referencia 2000000755544 C)`
   const noisyRefRes = parsePaymentText(noisyRefText)
-  assert(noisyRefRes.reference === '000000755544', `Ruido inicial '2' eliminado de RRN de 12 dígitos: ${noisyRefRes.reference}`)
+  assert(noisyRefRes.reference === '755544', `Ruido inicial '2' eliminado y últimos 6 dígitos: ${noisyRefRes.reference}`)
 
   const phoneAsDateText = `Número (0424) 21-24-08 Fechay Hora 10 agosto 2026`
   const phoneAsDateRes = parsePaymentText(phoneAsDateText)
@@ -175,6 +175,32 @@ async function run() {
   assert(valResult.missingFields.includes('date'), 'Identifica que falta la fecha')
   assert(!valResult.missingFields.includes('amount'), 'Monto ya no es un campo bloqueante/faltante')
   assert(valResult.confidence === 60, `Cálculo de confianza proporcional: ${valResult.confidence}%`)
+
+  // 9. Comprobante real Bancamiga con destino Banco de Venezuela
+  console.log('\n• [9/9] Probando comprobante Bancamiga con banco destino Banco de Venezuela (caso real)...')
+  const bancamigaRealText = `
+    Bancamiga
+    Banco Universal
+    NUMERO DE REFERENCIA:
+    150941329002
+    MONTO DE LA OPERACIÓN:
+    Bs. 15.181,00
+    CI /RIF BENEFICIARIO:
+    V-27544138
+    TELF BENEFICIARIO:
+    04241699449
+    BANCO:
+    BANCO DE VENEZUELA
+    FECHA:
+    01/09/26 03:09 pm
+    CONCEPTO:
+    cuartobate
+  `
+  const bancamigaRealRes = parsePaymentText(bancamigaRealText)
+  assert(bancamigaRealRes.reference === '329002', `Referencia 6 dígitos extraída de Bancamiga: ${bancamigaRealRes.reference}`)
+  assert(bancamigaRealRes.bank.includes('Bancamiga'), `Banco emisor detectado Bancamiga (no el destino): ${bancamigaRealRes.bank}`)
+  assert(bancamigaRealRes.amount === 'Bs. 15.181,00', `Monto Bancamiga normalizado: ${bancamigaRealRes.amount}`)
+  assert(bancamigaRealRes.date === '01/09/2026', `Fecha normalizada: ${bancamigaRealRes.date}`)
 
   console.log('\n-------------------------------------------------------------')
   if (allPassed) {

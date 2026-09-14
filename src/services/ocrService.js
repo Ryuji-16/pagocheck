@@ -184,7 +184,7 @@ function findBankByAliases(haystack) {
 export function detectBank(text) {
   const lower = normalizeOcr(text)
 
-  // 1. Detección por encabezado o mención de banco emisor/origen
+  // 1. Detección por encabezado o mención de banco emisor/origen explícito
   const emisor = lower.match(
     /banco\s*(?:emisor|origen)\s*[-:]?\s*([a-z0-9 .]{3,40})/
   )
@@ -202,39 +202,58 @@ export function detectBank(text) {
     if (found) return found
   }
 
-  // 3. Firmas directas de apps bancarias reconocidas
-  if (/cta\.?\s*corriente\s*bnc|\bbnc\b/.test(lower.slice(0, 400))) {
-    return BANKS.find((item) => item.code === '0191') || null
-  }
-
-  if (/tpago|mercantil/.test(lower.slice(0, 500))) {
-    return BANKS.find((item) => item.code === '0105') || null
-  }
-
-  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv|banco de venezuela/.test(lower.slice(0, 600))) {
-    return BANKS.find((item) => item.code === '0102') || null
-  }
-
-  if (/banesco|banescom[oó]vil/.test(lower.slice(0, 500))) {
-    return BANKS.find((item) => item.code === '0134') || null
-  }
-
-  if (/provincial|bbva/.test(lower.slice(0, 500))) {
-    return BANKS.find((item) => item.code === '0108') || null
-  }
-
-  if (/bancamiga/.test(lower.slice(0, 500))) {
+  // 3. Encabezado principal del comprobante (primeros 250 caracteres donde está el logo/marca emisora)
+  // Prioritario para no confundir con el banco beneficiario/destino (ej: Bancamiga transfiriendo a BDV)
+  const topHeader = lower.slice(0, 250)
+  if (/bancamiga/.test(topHeader)) {
     return BANKS.find((item) => item.code === '0172') || null
   }
+  if (/banesco|banescom[oó]vil/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0134') || null
+  }
+  if (/mercantil|tpago/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0105') || null
+  }
+  if (/provincial|bbva/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0108') || null
+  }
+  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv|banco de venezuela/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0102') || null
+  }
+  if (/cta\.?\s*corriente\s*bnc|\bbnc\b/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0191') || null
+  }
+  if (/bancaribe/.test(topHeader)) {
+    return BANKS.find((item) => item.code === '0114') || null
+  }
 
-  const header = lower.slice(0, 300)
+  // 4. Texto sin la sección del comercio/beneficiario ni banco destino
   const withoutDestination = lower
     .replace(/telf?\s*beneficiar[\s\S]{0,48}/g, ' ')
     .replace(/beneficiar[\s\S]{0,80}/g, ' ')
     .replace(/banco\s*(?:destino|receptor)\s*[-:][\s\S]{0,60}/g, ' ')
     .replace(/\bbanco\s*:\s*[\s\S]{0,48}/g, ' ')
 
-  return findBankByAliases(header) || findBankByAliases(withoutDestination)
+  if (/bancamiga/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0172') || null
+  }
+  if (/banesco|banescom[oó]vil/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0134') || null
+  }
+  if (/tpago|mercantil/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0105') || null
+  }
+  if (/provincial|bbva/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0108') || null
+  }
+  if (/pagom[oev]+vil\s*bdv|pagom[oev]+vilbdv|bdvapp|pagomovilbdv|banco de venezuela/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0102') || null
+  }
+  if (/cta\.?\s*corriente\s*bnc|\bbnc\b/.test(withoutDestination)) {
+    return BANKS.find((item) => item.code === '0191') || null
+  }
+
+  return findBankByAliases(topHeader) || findBankByAliases(withoutDestination)
 }
 
 const MONTHS = {
@@ -328,11 +347,11 @@ export function extractDate(compact) {
 }
 
 /**
- * Extrae el número de referencia completo (sin truncar a los últimos 6 dígitos),
- * sanitizando posibles errores visuales de OCR y evitando falsos positivos de estado.
+ * Extrae los últimos 6 dígitos de la referencia de pago móvil,
+ * sanitizando errores visuales de OCR y ajustándose a la conciliación bancaria estándar en Venezuela.
  */
 export function extractReference(compact) {
-  // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, Ubii, etc.)
+  // Patrón 1: Etiquetas bancarias explícitas (Banesco, BDV, Mercantil, Provincial, Bancamiga, etc.)
   const refLabelRegex =
     /(?:n[uú]mero\s+de\s+ref[eao]r[eao]ncia|nro\.?\s*(?:de\s*)?ref[eao]r[eao]ncia|n[°º]\.?\s*(?:de\s*)?ref[eao]r[eao]ncia|ref[eao]r[eao]ncia|ref\b\.?|n[°º]\s*de\s*operaci[oó]n|operaci[oó]n\s*(?:nro|n[°º]|#|\.)|secuencia|aprobaci[oó]n|confirmaci[oó]n|transacci[oó]n\s*(?:nro|n[°º]|#|\.)?)\s*[-:#.]*\s*([^\n\r]{1,40})/gi
 
@@ -351,7 +370,8 @@ export function extractReference(compact) {
       }
 
       if (digits.length >= 4) {
-        return digits
+        // En Venezuela se concilian los últimos 6 dígitos de la operación
+        return digits.length > 6 ? digits.slice(-6) : digits
       }
     }
   }
@@ -366,7 +386,7 @@ export function extractReference(compact) {
       digits = digits.slice(1)
     }
     if (digits.length >= 4) {
-      return digits
+      return digits.length > 6 ? digits.slice(-6) : digits
     }
   }
 
