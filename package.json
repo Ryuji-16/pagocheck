@@ -12,6 +12,7 @@
     "test:auth": "node scripts/test_auth.js",
     "test:rbac": "node scripts/test_rbac.js",
     "test:integrity": "node scripts/test_integrity.js",
+    "test:vectors": "node scripts/test_attack_vectors.js",
     "test:provider": "node scripts/test_verification_provider.js",
     "test:storage": "node scripts/test_storage.js",
     "test:ocr": "node scripts/test_ocr.js",

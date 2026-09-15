@@ -91,8 +91,8 @@ create table if not exists public.movements (
   username text not null,
   label text,
   branch text,
-  type text not null check (type in ('pago', 'vuelto', 'anulacion')),
-  status text check (status in ('ok', 'confirmed', 'not-found', 'error', 'pending')),
+  type text not null check (type in ('validacion', 'pago', 'vuelto', 'anulacion')),
+  status text check (status in ('confirmed', 'ok', 'simulado', 'not-found', 'error', 'pending')),
   amount text,
   reference text,
   phone text,
@@ -100,7 +100,7 @@ create table if not exists public.movements (
   cedula text,
   note text,
   receipt_image text,
-  provider text default 'banesco'
+  provider text not null default 'banesco'
 );
 
 comment on table public.movements is 'Registro de transacciones con aislamiento multi-sucursal y blindaje anti-duplicados.';
@@ -114,10 +114,10 @@ create index if not exists idx_movements_username on public.movements (username)
 -- 6. Blindaje Anti-Duplicados a Nivel de Base de Datos
 -- ==============================================================================
 -- Impide registrar dos veces la misma transacción confirmada en el mismo banco.
-create unique index if not exists movements_unique_confirmed_reference
+create unique index if not exists movements_provider_bank_ref_idx
 on public.movements (
-  lower(coalesce(provider, 'banesco')),
-  lower(coalesce(bank, '')),
+  lower(trim(coalesce(provider, 'banesco'))),
+  lower(trim(coalesce(bank, ''))),
   lower(trim(reference))
 )
 where (
